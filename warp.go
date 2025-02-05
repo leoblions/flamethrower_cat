@@ -6,6 +6,8 @@ import (
 	"path"
 )
 
+// data file columns: warpID mapID  gridX  gridY
+
 type WarpDest struct {
 	warpID int
 	mapID  int
