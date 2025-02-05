@@ -111,10 +111,12 @@ func (inp *Input) Update() {
 				inp.game.tileMap.loadCurrentLevelMapFromFile()
 				inp.game.pickupManager.loadDataFromFile()
 				inp.game.fidgetManager.loadDataFromFile()
+				inp.game.platformManager.loadDataFromFile()
 			case ebiten.KeyF1:
 				inp.game.tileMap.saveMapToFile()
 				inp.game.pickupManager.saveDataToFile()
 				inp.game.fidgetManager.saveDataToFile()
+				inp.game.platformManager.saveDataToFile()
 			case ebiten.KeyP:
 				inp.game.Pause()
 			case ebiten.KeyF:

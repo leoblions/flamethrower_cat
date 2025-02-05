@@ -324,6 +324,15 @@ type rect struct {
 	height int
 }
 
+func (r *rect) Clone() *rect {
+	r2 := &rect{}
+	r2.x = r.x
+	r2.y = r.y
+	r2.width = r.width
+	r2.height = r.height
+	return r2
+}
+
 func collideRect(rect1, rect2 rect) bool {
 	r1x2 := rect1.x + rect1.width
 	r1y2 := rect1.y + rect1.height

@@ -91,25 +91,28 @@ func (p *Player) Update() {
 	dflags := p.game.input.dflags
 
 	solidBelowPlayer := p.game.tileMap.solidUnderPlayer(0)
-	// if !solidBelowPlayer {
-	// 	p.velY += PL_GRAVITY_AMOUNT
-	// } else {
-	// 	if p.velY > 0 {
-	// 		p.velY = 0
-	// 	}
-	// }
 	var jump bool = false
-	//var fall bool = false
+	plat := p.game.platformManager.playerStandingOnPlatform
 
-	if dflags.up && !dflags.down && (solidBelowPlayer || p.hoverMode) {
+	if dflags.up && !dflags.down && (solidBelowPlayer || plat || p.hoverMode) {
 		jump = true
+		// jumps can work
 		if p.hoverMode {
 			p.velY -= defaultSpeed
 		}
-	} else if (!dflags.up && dflags.down) && p.hoverMode {
-		p.velY += defaultSpeed
+	} else if !dflags.up && dflags.down {
+		if p.hoverMode || plat {
+			p.velY += defaultSpeed
+			//plat = false //press down to fall thru platform
+		}
+
 	} else if p.hoverMode {
 		p.velY = attenuate(p.velY, 1.0)
+		//plat = false
+	} else if plat && !dflags.up && !dflags.down {
+		if p.velY > 0 {
+			p.velY = 0
+		}
 	}
 
 	if dflags.left && !dflags.right {
@@ -131,11 +134,11 @@ func (p *Player) Update() {
 
 	dflags.reset()
 
-	if !p.hoverMode {
+	if !p.hoverMode && !plat {
 		p.velY += PL_GRAVITY_AMOUNT
 	}
 
-	if jump && solidBelowPlayer && !p.hoverMode {
+	if jump && (solidBelowPlayer || plat) && !p.hoverMode {
 		p.velY -= PL_JUMP_HEIGHT
 	}
 

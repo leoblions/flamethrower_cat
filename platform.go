@@ -20,23 +20,26 @@ const (
 	PF_FILENAME_BASE    = "platform"
 	PF_FILENAME_END     = ".csv"
 	PF_MAX_PLATFORMS    = 10
+	PF_MOD_RECT_H       = 3
 )
 
 type Platform struct {
-	startX  int
-	startY  int
-	width   int
-	height  int
-	endX    int
-	endY    int
-	currX   int
-	currY   int
-	gridX   int
-	gridY   int
-	visable bool
-	active  bool
-	speed   int
-	kind    int
+	startX    int
+	startY    int
+	moveGridX int
+	moveGridY int
+	width     int
+	height    int
+	endX      int
+	endY      int
+	currX     int
+	currY     int
+	gridX     int
+	gridY     int
+	visable   bool
+	active    bool
+	speed     int
+	kind      int
 }
 
 func (pf *Platform) getRect() *rect {
@@ -52,6 +55,8 @@ func NewPlatform(gridX, gridY, moveGridX, moveGridY, kind int) *Platform {
 	pf := &Platform{}
 	pf.gridX = gridX
 	pf.gridY = gridY
+	pf.moveGridX = moveGridX
+	pf.moveGridY = moveGridY
 	pf.startX = gridX * GAME_TILE_SIZE
 	pf.startY = gridY * GAME_TILE_SIZE
 	pf.width = PF_DEFAULT_WIDTH
@@ -68,21 +73,27 @@ type PlatformManager struct {
 	currentTick    int
 	platformsArray [PF_MAX_PLATFORMS]*Platform
 
-	defImage      *ebiten.Image
-	images        []*ebiten.Image
-	testRect      rect
-	filename_base string
-	assetID       int
+	defImage                 *ebiten.Image
+	images                   []*ebiten.Image
+	testRect                 rect
+	filename_base            string
+	assetID                  int
+	playerStandingOnPlatform bool
+	modifiedRect             *rect
 }
 
 func NewPlatformManager(game *Game) *PlatformManager {
 	pfm := &PlatformManager{}
-	pfm.filename_base = PUM_FILENAME_BASE
+	pfm.filename_base = PF_FILENAME_BASE
 	pfm.game = game
 	pfm.platformsArray = [PF_MAX_PLATFORMS]*Platform{}
 	pfm.initImages()
 	pfm.assetID = 0
-	pfm.AddInstanceToGrid(3, 3, 0)
+	//pfm.AddInstanceToGrid(3, 3, 0)
+	pfm.modifiedRect = &rect{}
+	pfm.modifiedRect.height = PF_MOD_RECT_H
+	pfm.modifiedRect.width = playerWidth
+	pfm.loadDataFromFile()
 	return pfm
 
 }
@@ -120,6 +131,7 @@ func (pfm *PlatformManager) Draw(screen *ebiten.Image) {
 func (pfm *PlatformManager) Update() {
 	pfm.checkPlatformTouchedPlayer()
 	pfm.platformMotion()
+
 }
 
 func (pfm *PlatformManager) platformMotion() {
@@ -129,6 +141,9 @@ func (pfm *PlatformManager) platformMotion() {
 func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
 
 	playerRect := pfm.game.player.getWorldColliderRect()
+	rectTop := playerRect.y + playerRect.height - 3
+	pfm.modifiedRect.x = playerRect.x
+	pfm.modifiedRect.y = rectTop
 	for _, v := range pfm.platformsArray {
 		if nil != v {
 			pfm.testRect.height = v.height
@@ -136,8 +151,11 @@ func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
 			pfm.testRect.x = v.currX
 			pfm.testRect.y = v.currY
 
-			if collideRect(playerRect, pfm.testRect) {
-				fmt.Println("player touched platform")
+			if collideRect(*pfm.modifiedRect, pfm.testRect) {
+				//fmt.Println("player touched platform")
+				pfm.playerStandingOnPlatform = true
+			} else {
+				pfm.playerStandingOnPlatform = false
 			}
 		}
 	}
@@ -150,7 +168,13 @@ func (pfm *PlatformManager) saveDataToFile() {
 	for i := 0; i < rows; i++ {
 		PlatformObj := pfm.platformsArray[i]
 		if PlatformObj != nil {
-			record := []int{PlatformObj.kind, PlatformObj.gridX, PlatformObj.gridY}
+			//gridX, gridY, moveGridX, moveGridY, kind
+			record := []int{
+				PlatformObj.gridX,
+				PlatformObj.gridY,
+				PlatformObj.moveGridX,
+				PlatformObj.moveGridY,
+				PlatformObj.kind}
 			numericData = append(numericData, record)
 		}
 
@@ -170,6 +194,7 @@ func (pfm *PlatformManager) getDataFileURL() string {
 }
 
 func (pfm *PlatformManager) loadDataFromFile() error {
+	//fmt.Println("platform load")
 	//writeMapToFile(pfm.tileData, pfm_DEFAULT_MAP_FILENAME)
 	name := pfm.getDataFileURL()
 	numericData, err := loadDataListFromFile(name)

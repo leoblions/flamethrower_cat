@@ -264,6 +264,7 @@ func (g *Game) init() {
 	g.screenHeight = screenHeight
 	g.screenWidth = screenWidth
 	//g.player = &Player{}
+	g.level = GAME_START_LEVEL
 	g.player = NewPlayer(g, startX, startY)
 	g.input = &Input{}
 	g.input.init(g)
@@ -282,7 +283,7 @@ func (g *Game) init() {
 	g.platformManager = NewPlatformManager(g)
 	g.score = 0
 	g.lives = 3
-	g.level = GAME_START_LEVEL
+
 	g.mode = 0
 	timerLastTimeMillis = time.Now().UnixNano()
 	g.editMode = EditTile
@@ -334,6 +335,7 @@ func (g *Game) loadLevel(level int) {
 	g.pickupManager.loadDataFromFile()
 	g.fidgetManager.loadDataFromFile()
 	g.entityManager.loadDataFromFile()
+	g.platformManager.loadDataFromFile()
 
 }
 
