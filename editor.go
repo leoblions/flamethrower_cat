@@ -66,6 +66,8 @@ func (ed *Editor) editHandleLeftClick(mouseX, mouseY int) {
 	case EditPickup:
 		component = ed.game.pickupManager
 	case EditZone:
+	case EditPlatform:
+		component = ed.game.platformManager
 
 	}
 	ts := ed.game.tileMap.tileSize

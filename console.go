@@ -82,6 +82,8 @@ func (con *Console) executeCommand(command string) {
 	switch functionSelector {
 	case "FLY":
 		con.game.player.hoverMode = !con.game.player.hoverMode
+	case "GOD":
+		con.game.godMode = !con.game.godMode
 	case "TILE":
 		fmt.Println("Set tile")
 		con.game.editMode = EditTile
@@ -105,6 +107,10 @@ func (con *Console) executeCommand(command string) {
 	case "FIDGET":
 		fmt.Println("Set decor")
 		con.game.editMode = EditFidget
+		editCommandEntered = true
+	case "PLATFORM":
+		fmt.Println("Set platform")
+		con.game.editMode = EditPlatform
 		editCommandEntered = true
 	case "FILL":
 		fmt.Println("Fill with tile")

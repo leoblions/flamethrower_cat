@@ -95,6 +95,7 @@ type Game struct {
 	mode                            int
 	centerMarqueeEndActionsComplete bool
 	editMode                        EditMode
+	godMode                         bool
 	activateObject                  bool
 }
 
@@ -171,12 +172,12 @@ func (g *Game) Pause() {
 			g.centerText.stringContent = "Paused"
 			g.centerText.visible = true
 			g.player.frozen = true
-			g.ball.frozen = true
+			//g.ball.frozen = true
 		} else if g.mode == 2 {
 			g.mode = 0
 			g.centerText.visible = false
 			g.player.frozen = false
-			g.ball.frozen = false
+			//g.ball.frozen = false
 		}
 
 	} else {
@@ -285,6 +286,7 @@ func (g *Game) init() {
 	g.mode = 0
 	timerLastTimeMillis = time.Now().UnixNano()
 	g.editMode = EditTile
+	g.godMode = false
 
 }
 
