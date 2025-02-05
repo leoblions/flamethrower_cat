@@ -228,3 +228,8 @@ func (pum *PickupManager) AddInstanceToGrid(gridX, gridY, kind int) {
 		log.Println("Failed to add pickup, no open slots")
 	}
 }
+func (tm *PickupManager) getAssetID() int {
+
+	return tm.assetID
+
+}

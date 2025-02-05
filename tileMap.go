@@ -349,3 +349,8 @@ func (tm *TileMap) CycleAssetKind(direction int) {
 	fmt.Println("Selected tile ", tm.selectedEditTile)
 
 }
+func (tm *TileMap) getAssetID() int {
+
+	return tm.selectedEditTile
+
+}

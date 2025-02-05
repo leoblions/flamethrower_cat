@@ -11,16 +11,20 @@ import (
 )
 
 const (
-	PF_DEFAULT_WIDTH    = 150
-	PF_DEFAULT_HEIGHT   = 30
-	PF_DEFAULT_SPEED    = 2
-	PF_MOTION_TICK_RATE = 4
-	PF_TICK_COUNT_MAX   = 4
-	PF_IMAGE_FILENAME   = "longBrick.png"
-	PF_FILENAME_BASE    = "platform"
-	PF_FILENAME_END     = ".csv"
-	PF_MAX_PLATFORMS    = 10
-	PF_MOD_RECT_H       = 3
+	PF_DEFAULT_WIDTH            = 150
+	PF_DEFAULT_HEIGHT           = 30
+	PF_DEFAULT_SPEED            = 2
+	PF_MOTION_TICK_RATE         = 4
+	PF_TICK_COUNT_MAX           = 4
+	PF_IMAGE_FILENAME           = "longBrick.png"
+	PF_FILENAME_BASE            = "platform"
+	PF_FILENAME_END             = ".csv"
+	PF_MAX_PLATFORMS            = 10
+	PF_MOD_RECT_H               = 3
+	PF_SWITCH_DIRECTION_TICKS   = 100
+	PF_DEF_MOVE_GRID_X          = 5
+	PF_DEF_MOVE_GRID_Y          = 5
+	PF_TOUCH_PLAYER_FOOT_WINDOW = 3
 )
 
 type Platform struct {
@@ -40,6 +44,8 @@ type Platform struct {
 	active    bool
 	speed     int
 	kind      int
+	velX      int
+	velY      int
 }
 
 func (pf *Platform) getRect() *rect {
@@ -80,12 +86,19 @@ type PlatformManager struct {
 	assetID                  int
 	playerStandingOnPlatform bool
 	modifiedRect             *rect
+	direction                int
+	directionChangeStage     int
+	touchingPlatformVelX     int
+	touchingPlatformVelY     int
 }
 
 func NewPlatformManager(game *Game) *PlatformManager {
 	pfm := &PlatformManager{}
+	pfm.currentTick = 0
 	pfm.filename_base = PF_FILENAME_BASE
 	pfm.game = game
+	pfm.direction = 1
+	pfm.directionChangeStage = 0
 	pfm.platformsArray = [PF_MAX_PLATFORMS]*Platform{}
 	pfm.initImages()
 	pfm.assetID = 0
@@ -128,22 +141,65 @@ func (pfm *PlatformManager) Draw(screen *ebiten.Image) {
 
 }
 
+func (pfm *PlatformManager) cycleDirection() {
+	if pfm.currentTick < PF_SWITCH_DIRECTION_TICKS {
+		pfm.currentTick++
+
+	} else {
+		pfm.currentTick = 0
+		if pfm.directionChangeStage == 0 {
+			pfm.directionChangeStage = 1
+			pfm.direction = 0
+		} else if pfm.directionChangeStage == 1 {
+			pfm.directionChangeStage = 2
+			pfm.direction = 1
+		} else if pfm.directionChangeStage == 2 {
+			pfm.directionChangeStage = 3
+			pfm.direction = 0
+		} else if pfm.directionChangeStage == 3 {
+			pfm.directionChangeStage = 0
+			pfm.direction = -1
+		}
+	}
+
+}
+
 func (pfm *PlatformManager) Update() {
 	pfm.checkPlatformTouchedPlayer()
+	pfm.cycleDirection()
 	pfm.platformMotion()
 
 }
 
 func (pfm *PlatformManager) platformMotion() {
+	for _, v := range pfm.platformsArray {
+		if nil != v {
+			v.velX = pfm.direction * PF_DEFAULT_SPEED
+			v.velY = pfm.direction * PF_DEFAULT_SPEED
+			v.currX += v.velX
+			v.currY += v.velY
+
+			v.currX = clamp(v.startX, v.endX, v.currX)
+			v.currY = clamp(v.startY, v.endY, v.currY)
+			if v.startX == v.endX {
+				v.velX = 0
+			}
+			if v.startY == v.endY {
+				v.velY = 0
+			}
+
+		}
+	}
 
 }
 
 func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
 
 	playerRect := pfm.game.player.getWorldColliderRect()
-	rectTop := playerRect.y + playerRect.height - 3
+	rectTop := playerRect.y + (playerRect.height - PF_TOUCH_PLAYER_FOOT_WINDOW)
 	pfm.modifiedRect.x = playerRect.x
 	pfm.modifiedRect.y = rectTop
+	pfm.playerStandingOnPlatform = false
 	for _, v := range pfm.platformsArray {
 		if nil != v {
 			pfm.testRect.height = v.height
@@ -154,8 +210,11 @@ func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
 			if collideRect(*pfm.modifiedRect, pfm.testRect) {
 				//fmt.Println("player touched platform")
 				pfm.playerStandingOnPlatform = true
+				pfm.touchingPlatformVelX = v.velX
+				pfm.touchingPlatformVelY = v.velY
+				//pfm.platformVelX = pfm.testRect.y
 			} else {
-				pfm.playerStandingOnPlatform = false
+
 			}
 		}
 	}
@@ -195,6 +254,7 @@ func (pfm *PlatformManager) getDataFileURL() string {
 
 func (pfm *PlatformManager) loadDataFromFile() error {
 	//fmt.Println("platform load")
+	pfm.platformsArray = [PF_MAX_PLATFORMS]*Platform{}
 	//writeMapToFile(pfm.tileData, pfm_DEFAULT_MAP_FILENAME)
 	name := pfm.getDataFileURL()
 	numericData, err := loadDataListFromFile(name)
@@ -249,11 +309,25 @@ func (pfm *PlatformManager) inactiveSlot() int {
 	return -1
 }
 
+func (tm *PlatformManager) getAssetID() int {
+
+	return tm.assetID
+
+}
+
 func (pfm *PlatformManager) AddInstanceToGrid(gridX, gridY, kind int) {
 	emptySlot := pfm.inactiveSlot()
 	if emptySlot != -1 {
+		moveX := 0
+		moveY := 0
+		if kind == 0 {
+			moveX = PF_DEF_MOVE_GRID_X
 
-		pu := NewPlatform(gridX, gridY, 0, 0, kind)
+		} else if kind == 1 {
+			moveY = PF_DEF_MOVE_GRID_Y
+		}
+
+		pu := NewPlatform(gridX, gridY, moveX, moveY, kind)
 		pfm.platformsArray[emptySlot] = pu
 		log.Println("Added Platform ", kind)
 	} else {

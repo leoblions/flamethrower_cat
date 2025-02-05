@@ -20,7 +20,7 @@ type Editor struct {
 func NewEditor(game *Game) *Editor {
 	ed := &Editor{}
 	ed.game = game
-	ed.assetID = 0
+	//ed.assetID = 0
 	return ed
 }
 
@@ -77,7 +77,7 @@ func (ed *Editor) editHandleLeftClick(mouseX, mouseY int) {
 		log.Println("Editor editHandleLeftClick no matching component")
 		return
 	}
-	component.AddInstanceToGrid(gridX, gridY, ed.assetID)
+	component.AddInstanceToGrid(gridX, gridY, component.getAssetID())
 
 }
 

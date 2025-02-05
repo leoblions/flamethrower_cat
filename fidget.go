@@ -57,6 +57,11 @@ func NewFidgetManager(game *Game) *FidgetManager {
 
 	return fm
 }
+func (tm *FidgetManager) getAssetID() int {
+
+	return tm.assetID
+
+}
 
 func (pum *FidgetManager) Draw(screen *ebiten.Image) {
 

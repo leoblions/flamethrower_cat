@@ -52,6 +52,11 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	return ent
 
 }
+func (tm *EntityManager) getAssetID() int {
+
+	return tm.assetID
+
+}
 
 func NewEntityManager(game *Game) *EntityManager {
 

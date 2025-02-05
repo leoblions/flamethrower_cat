@@ -132,12 +132,12 @@ func (con *Console) executeCommand(command string) {
 	}
 
 	if argsAmount == 2 && editCommandEntered && !fillTile {
-		con.game.editor.assetID, _ = strconv.Atoi(stringsList[1])
-		fmt.Println("Set assetID ", con.game.editor.assetID)
+		assetID, _ := strconv.Atoi(stringsList[1])
+		fmt.Println("Set assetID ", assetID)
 	} else if argsAmount == 2 && editCommandEntered && fillTile {
-		con.game.editor.assetID, _ = strconv.Atoi(stringsList[1])
-		fmt.Println("Set assetID ", con.game.editor.assetID)
-		con.game.tileMap.fillWithTile(con.game.editor.assetID)
+		assetID, _ := strconv.Atoi(stringsList[1])
+		fmt.Println("Set assetID ", assetID)
+		con.game.tileMap.fillWithTile(assetID)
 	}
 }
 

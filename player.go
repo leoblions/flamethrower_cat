@@ -94,6 +94,11 @@ func (p *Player) Update() {
 	var jump bool = false
 	plat := p.game.platformManager.playerStandingOnPlatform
 
+	if plat {
+		//fmt.Println("platform force up")
+	}
+	//playerFootHeight := p.worldX + playerHeight
+
 	if dflags.up && !dflags.down && (solidBelowPlayer || plat || p.hoverMode) {
 		jump = true
 		// jumps can work
@@ -110,8 +115,12 @@ func (p *Player) Update() {
 		p.velY = attenuate(p.velY, 1.0)
 		//plat = false
 	} else if plat && !dflags.up && !dflags.down {
+		p.velY = float32(p.game.platformManager.touchingPlatformVelY)
+		p.velX = float32(p.game.platformManager.touchingPlatformVelX)
 		if p.velY > 0 {
-			p.velY = 0
+
+			p.velY = -1
+
 		}
 	}
 

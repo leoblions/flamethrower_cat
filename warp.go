@@ -21,6 +21,7 @@ func NewWarpManager(game *Game) *WarpManager {
 	wm.warpDestList = append(wm.warpDestList, &WarpDest{1, 2, 3, 3})
 	wm.warpDestList = append(wm.warpDestList, &WarpDest{2, 3, 3, 3})
 	wm.warpDestList = append(wm.warpDestList, &WarpDest{3, 4, 3, 3})
+	wm.warpDestList = append(wm.warpDestList, &WarpDest{4, 5, 3, 3})
 	wm.game = game
 	return wm
 }
@@ -29,9 +30,10 @@ func (wm *WarpManager) warpPlayerToWarpID(warpID int) {
 	for _, v := range wm.warpDestList {
 		if v.warpID == warpID {
 			wm.game.level = v.mapID
-			wm.game.tileMap.loadCurrentLevelMapFromFile()
-			wm.game.pickupManager.loadDataFromFile()
-			wm.game.fidgetManager.loadDataFromFile()
+			//wm.game.tileMap.loadCurrentLevelMapFromFile()
+			//wm.game.pickupManager.loadDataFromFile()
+			//wm.game.fidgetManager.loadDataFromFile()
+			wm.game.loadLevel(wm.game.level)
 			wm.game.player.warpPlayerToGridLocation(v.gridX, v.gridY)
 			return
 		}
