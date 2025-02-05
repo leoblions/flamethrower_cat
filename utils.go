@@ -106,7 +106,8 @@ func loadDataListFromFile(filePath string) ([][]int, error) {
 			if value == "\x00" {
 				continue
 			}
-			intValue, err := strconv.Atoi(value)
+			strippedValue := strings.Trim(value, " ")
+			intValue, err := strconv.Atoi(strippedValue)
 			if err != nil {
 				log.Fatal(err)
 			}
