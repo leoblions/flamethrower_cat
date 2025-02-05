@@ -17,7 +17,8 @@ Controls:
 WASD = movement
 W = activate door
 F = fire flamethrower
-SHIFT + W/D = run, long jump
+SHIFT + A/D = run
+SHIFT + W + A/D = long jump
 ` dev console
 Left mouse = edit tile/object
 

@@ -14,6 +14,10 @@ type Input struct {
 	cursorPos pos
 }
 
+const (
+	INP_PRINT_WHEN_KEY_NOT_USED = false
+)
+
 type DirectionFlags struct {
 	up    bool
 	down  bool
@@ -121,7 +125,9 @@ func (inp *Input) Update() {
 				inp.game.player.run = true
 				inp.game.tileMap.runPan = true
 			default:
-				fmt.Println("Key not used: ", k.String())
+				if INP_PRINT_WHEN_KEY_NOT_USED {
+					fmt.Println("Key not used: ", k.String())
+				}
 
 			}
 

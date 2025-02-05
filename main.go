@@ -61,6 +61,7 @@ const (
 	EditInteractive
 	EditZone
 	EditSpawner
+	EditPlatform
 )
 
 var img *ebiten.Image
@@ -114,6 +115,7 @@ type rasterStrings struct {
 	fidgetManager     *FidgetManager
 	warpManager       *WarpManager
 	entityManager     *EntityManager
+	platformManager   *PlatformManager
 }
 
 func (g *Game) Update() error {
@@ -134,6 +136,7 @@ func (g *Game) Update() error {
 		g.console.Update()
 		g.fidgetManager.Update()
 		g.entityManager.Update()
+		g.platformManager.Update()
 	}
 
 	return nil
@@ -153,6 +156,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.pickupManager.Draw(screen)
 	g.console.Draw(screen)
 	g.entityManager.Draw(screen)
+	g.platformManager.Draw(screen)
 
 }
 
@@ -274,6 +278,7 @@ func (g *Game) init() {
 	g.fidgetManager = NewFidgetManager(g)
 	g.warpManager = NewWarpManager(g)
 	g.entityManager = NewEntityManager(g)
+	g.platformManager = NewPlatformManager(g)
 	g.score = 0
 	g.lives = 3
 	g.level = GAME_START_LEVEL
