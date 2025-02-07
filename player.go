@@ -134,7 +134,7 @@ func (p *Player) Update() {
 		if p.run {
 			p.velX += PL_RUN_BOOST
 		}
-	} else {
+	} else if !plat {
 		p.velX = attenuate(p.velX, 1.0)
 	}
 	p.run = false

@@ -233,3 +233,11 @@ func (tm *PickupManager) getAssetID() int {
 	return tm.assetID
 
 }
+
+func (tm *PickupManager) setAssetID(assetID int) {
+
+	if assetID < len(tm.images) && assetID >= 0 {
+		tm.assetID = assetID
+	}
+
+}

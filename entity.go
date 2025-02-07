@@ -20,12 +20,15 @@ const (
 	EN_SPRITE_H                 = 100
 	EN_SPRITE_W                 = 100
 	EN_CREATE_FILE_IF_NOT_EXIST = true
+	EN_FOLLOW_DIST              = 300
+	EN_ENEMY_SPEED_1            = 2
+	EN_STOP_FOLLOW_DIST         = 100
 )
 
 type EntityManager struct {
 	game          *Game
 	maxEntitys    int
-	EntitysArray  [FM_MAX_ENTITY_ROOM]*Entity
+	entityList    []*Entity
 	images        []*ebiten.Image
 	testRect      *rect
 	assetID       int
@@ -39,16 +42,26 @@ type Entity struct {
 	uid        int
 	worldX     int
 	worldY     int
+	velX       int
+	velY       int
 	health     int
+	width      int
+	height     int
+	direction  rune
 	alive      bool
 	onScreen   bool
+	isEnemy    bool
 }
 
 func NewEntity(kind, startGridX, startGridY int) *Entity {
 	worldX := GAME_TILE_SIZE * startGridX
 	worldY := GAME_TILE_SIZE * startGridY
-	ent := &Entity{kind, startGridX, startGridY,
-		0, worldX, worldY, 100, true, true}
+	ent := &Entity{}
+	ent.kind = kind
+	ent.startGridX = startGridX
+	ent.startGridY = startGridY
+	ent.worldX = worldX
+	ent.worldY = worldY
 	return ent
 
 }
@@ -65,96 +78,175 @@ func NewEntityManager(game *Game) *EntityManager {
 	fm.filename_base = EN_FILENAME_BASE
 	fm.maxEntitys = FM_MAX_ENTITY_ROOM
 	fm.initImages()
-	fm.EntitysArray = [FM_MAX_ENTITY_ROOM]*Entity{}
-	//pum.AddPickup(200, 200, 0)
-	//pum.AddPickup(200, 300, 0)
+	fm.entityList = []*Entity{}
+	//ent.AddPickup(200, 200, 0)
+	//ent.AddPickup(200, 300, 0)
 	fm.testRect = &rect{0, 0, EN_SPRITE_W, EN_SPRITE_H}
 	fm.assetID = 0
 	fm.loadDataFromFile()
+	fm.testRect = &rect{}
 
 	return fm
 }
 
-func (pum *EntityManager) Draw(screen *ebiten.Image) {
+func (ent *EntityManager) Draw(screen *ebiten.Image) {
 
-	for _, v := range pum.EntitysArray {
+	for _, v := range ent.entityList {
 		if nil != v && true == v.alive {
-			screenX := (pum.game.tileMap.tileSize * v.startGridX) - worldOffsetX
-			screenY := (pum.game.tileMap.tileSize * v.startGridY) - worldOffsetY
-			DrawImageAt(screen, pum.images[v.kind], screenX, screenY)
+			//fmt.Println("ent draw")
+			screenX := (v.worldX) - worldOffsetX
+			screenY := (v.worldY) - worldOffsetY
+			DrawImageAt(screen, ent.images[v.kind], screenX, screenY)
 		}
 	}
 
 }
 
-func (pum *EntityManager) Update() {
-	pum.checkEntitysTouchedPlayer()
+func (em *EntityManager) Update() {
+	em.entityMotion()
+	em.checkEntitysTouchedPlayer()
 
-	pum.game.activateObject = false
+	em.game.activateObject = false
 
 }
 
-func (pum *EntityManager) touchEntityAction(kind, uid int) {
+func (entity *Entity) entityFollowPlayer(game *Game) {
+	//fmt.Println("entity folow player")
+	pposX := game.player.worldX
+	//pposY := game.player.worldY
+	if entity.worldX+EN_STOP_FOLLOW_DIST < pposX {
+		entity.velX = EN_ENEMY_SPEED_1
+	} else if entity.worldX-EN_STOP_FOLLOW_DIST > pposX {
+		entity.velX = -EN_ENEMY_SPEED_1
+
+	} else {
+		entity.velX = 0
+	}
+
+}
+
+func (entity *Entity) entityDetectPlatformEdge(game *Game) bool {
+	checkPointOffset := 5
+	checkPointX := 0
+	checkPointY := entity.height + entity.worldY + checkPointOffset
+	if entity.velX > 0 {
+		checkPointX = entity.worldX + entity.width
+	} else if entity.velX < 0 {
+		checkPointX = entity.worldX
+	} else {
+		checkPointX = entity.worldX + (entity.width / 2)
+	}
+	return !game.tileMap.pointCollidedWithSolidTile(checkPointX, checkPointY)
+
+}
+
+func (entity *Entity) entityDetectAdjacentWall(game *Game) bool {
+	checkPointOffset := 5
+	checkPointX := 0
+	checkPointY := (entity.height / 2) + entity.worldY
+	if entity.velX > 0 {
+		checkPointX = entity.worldX + entity.width + checkPointOffset
+	} else if entity.velX < 0 {
+		checkPointX = entity.worldX - checkPointOffset
+	} else {
+		checkPointX = entity.worldX + (entity.width / 2)
+	}
+	return game.tileMap.pointCollidedWithSolidTile(checkPointX, checkPointY)
+
+}
+
+func (em *EntityManager) entityMotion() {
+
+	for _, entity := range em.entityList {
+
+		entity.entityFollowPlayer(em.game)
+		if entity.entityDetectPlatformEdge(em.game) || entity.entityDetectAdjacentWall(em.game) {
+			entity.velX = 0
+		}
+		//calculate coll rect
+		em.testRect.x = entity.worldX
+		em.testRect.y = entity.worldY
+		em.testRect.width = EN_SPRITE_W
+		em.testRect.height = EN_SPRITE_H
+
+		// check collision
+		sideCollisions := em.game.tileMap.getSideCollisionData(*em.testRect)
+		if !sideCollisions.down {
+			entity.velY += PL_GRAVITY_AMOUNT
+		} else if entity.velY > 0 {
+			entity.velY = 0
+
+		}
+
+		// update position
+		entity.worldX += entity.velX
+		entity.worldY += entity.velY
+
+	}
+
+}
+
+func (em *EntityManager) touchEntityAction(kind, uid int) {
 	//fmt.Println("Entity touched ", kind)
-	//pum.game.incrementScore(1)
-	if kind == 0 && pum.game.activateObject == true {
-		pum.game.warpManager.warpPlayerToWarpID(uid)
-		pum.game.activateObject = false
+	//ent.game.incrementScore(1)
+	if kind == 0 && em.game.activateObject == true {
+		em.game.warpManager.warpPlayerToWarpID(uid)
+		em.game.activateObject = false
 	}
 }
 
-func (pum *EntityManager) checkEntitysTouchedPlayer() {
+func (em *EntityManager) checkEntitysTouchedPlayer() {
 
-	playerRect := pum.game.player.getWorldColliderRect()
-	for _, v := range pum.EntitysArray {
+	playerRect := em.game.player.getWorldColliderRect()
+	for _, v := range em.entityList {
 		if nil != v && true == v.alive {
-			pum.testRect.x = pum.game.tileMap.tileSize * v.startGridX
-			pum.testRect.y = pum.game.tileMap.tileSize * v.startGridY
+			em.testRect.x = em.game.tileMap.tileSize * v.startGridX
+			em.testRect.y = em.game.tileMap.tileSize * v.startGridY
 
-			if collideRect(playerRect, *pum.testRect) {
+			if collideRect(playerRect, *em.testRect) {
 				//v.alive = false
-				pum.touchEntityAction(v.kind, v.uid)
+				em.touchEntityAction(v.kind, v.uid)
 			}
 		}
 	}
 }
 
-func (pum *EntityManager) initImages() error {
-	pum.images = []*ebiten.Image{}
+func (ent *EntityManager) initImages() error {
+	ent.images = []*ebiten.Image{}
 	imageDir := path.Join(subdir, IMAGES_IDLE_SHEET)
 	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
 	starImage := copyAndStretchImage(rawImage, EN_SPRITE_W, EN_SPRITE_H)
-	pum.images = append(pum.images, starImage)
+	ent.images = append(ent.images, starImage)
 	//skull
 	imageDir = path.Join(subdir, IMAGES_WALK_SHEET)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	skullImage := copyAndStretchImage(rawImage, EN_SPRITE_W, EN_SPRITE_H)
-	pum.images = append(pum.images, skullImage)
+	ent.images = append(ent.images, skullImage)
 	//spikes
 	imageDir = path.Join(subdir, IMAGES_ATTACK_SHEET)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	spikeImage := copyAndStretchImage(rawImage, EN_SPRITE_W, EN_SPRITE_H)
-	pum.images = append(pum.images, spikeImage)
+	ent.images = append(ent.images, spikeImage)
 	return err
 
 }
 
-func (pum *EntityManager) inactiveSlot() int {
+func (ent *EntityManager) inactiveSlot() int {
 	// find usable slot in pickups array, or -1 if there is none
-	for i := 0; i < len(pum.EntitysArray); i++ {
-		if nil == pum.EntitysArray[i] || false == pum.EntitysArray[i].alive {
+	for i := 0; i < len(ent.entityList); i++ {
+		if nil == ent.entityList[i] || false == ent.entityList[i].alive {
 			return i
 		}
 	}
 	return -1
 }
 
-func (pum *EntityManager) saveDataToFile() {
-	name := pum.getDataFileURL()
+func (ent *EntityManager) saveDataToFile() {
+	name := ent.getDataFileURL()
 	numericData := [][]int{}
-	rows := len(pum.EntitysArray)
+	rows := len(ent.entityList)
 	for i := 0; i < rows; i++ {
-		pickupObj := pum.EntitysArray[i]
+		pickupObj := ent.entityList[i]
 		if pickupObj != nil {
 			record := []int{pickupObj.kind, pickupObj.startGridX, pickupObj.startGridY, pickupObj.uid}
 			numericData = append(numericData, record)
@@ -168,15 +260,15 @@ func (pum *EntityManager) saveDataToFile() {
 		log.Println("Entitys: no data to write, ", name)
 	}
 }
-func (pum *EntityManager) getDataFileURL() string {
-	filename := pum.filename_base + strconv.Itoa(pum.game.level) + GAME_DATA_MATRIX_END
+func (ent *EntityManager) getDataFileURL() string {
+	filename := ent.filename_base + strconv.Itoa(ent.game.level) + GAME_DATA_MATRIX_END
 	URL := path.Join(GAME_LEVEL_DATA_DIR, filename)
 	return URL
 }
-func (pum *EntityManager) loadDataFromFile() error {
-	pum.EntitysArray = [FM_MAX_ENTITY_ROOM]*Entity{}
+func (ent *EntityManager) loadDataFromFile() error {
+	ent.entityList = []*Entity{}
 	//writeMapToFile(tm.tileData, TM_DEFAULT_MAP_FILENAME)
-	name := pum.getDataFileURL()
+	name := ent.getDataFileURL()
 	numericData, err := loadDataListFromFile(name)
 	rows := len(numericData)
 	if rows == 0 {
@@ -189,27 +281,30 @@ func (pum *EntityManager) loadDataFromFile() error {
 
 	for i := 0; i < FM_MAX_ENTITY_ROOM && i < rows; i++ {
 		v := numericData[i]
-		//pum.EntitysArray[i] = &Entity{v[0], v[1], v[2], v[3], true, true}
-		pum.EntitysArray[i] = NewEntity(v[0], v[1], v[2])
-		pum.EntitysArray[i].uid = v[3]
+		//ent.entityList[i] = &Entity{v[0], v[1], v[2], v[3], true, true}
+		ent.entityList[i] = NewEntity(v[0], v[1], v[2])
+		ent.entityList[i].uid = v[3]
 	}
 	return nil
 }
-func (pum *EntityManager) getUniqueUID() int {
+func (ent *EntityManager) getUniqueUID() int {
 
 	return 0
 }
 
-func (pum *EntityManager) AddInstanceToGrid(gridX, gridY, kind int) {
-	emptySlot := pum.inactiveSlot()
-	if emptySlot != -1 {
+func (ent *EntityManager) AddInstanceToGrid(gridX, gridY, kind int) {
+	//emptySlot := ent.inactiveSlot()
+	if 1 == 1 {
 		x := gridX
 		y := gridY
-		//uid := pum.getUniqueUID()
-		pu := NewEntity(kind, x, y)
-		pu.uid = pum.getUniqueUID()
-		pum.EntitysArray[emptySlot] = pu
-		log.Println("Added Entity ", kind)
+		//uid := ent.getUniqueUID()
+		entity := NewEntity(kind, x, y)
+		entity.alive = true
+		entity.uid = ent.getUniqueUID()
+		entity.width = EN_SPRITE_W
+		entity.height = EN_SPRITE_H
+		ent.entityList = append(ent.entityList, entity)
+		log.Printf("Added Entity %d at %d, %d\n", kind, gridX, gridY)
 	} else {
 		log.Println("Failed to add Entity, no open slots")
 	}
@@ -231,5 +326,13 @@ func (tm *EntityManager) CycleAssetKind(direction int) {
 	}
 
 	fmt.Println("Selected Entity ", tm.assetID)
+
+}
+
+func (tm *EntityManager) setAssetID(assetID int) {
+
+	if assetID < len(tm.images) && assetID >= 0 {
+		tm.assetID = assetID
+	}
 
 }

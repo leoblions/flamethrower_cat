@@ -39,19 +39,19 @@ var (
 )
 
 type TileMap struct {
-	game             *Game
-	tileSize         int
-	rows             int
-	cols             int
-	tileData         [mapRows][mapCols]int
-	tileImages       []*ebiten.Image
-	screenX          int
-	screenY          int
-	selectedEditTile int
-	tileKindMax      int
-	runPan           bool
-	filename_base    string
-	solidTiles       []int
+	game          *Game
+	tileSize      int
+	rows          int
+	cols          int
+	tileData      [mapRows][mapCols]int
+	images        []*ebiten.Image
+	screenX       int
+	screenY       int
+	assetID       int
+	tileKindMax   int
+	runPan        bool
+	filename_base string
+	solidTiles    []int
 }
 
 type RectPointCollisionData struct {
@@ -81,8 +81,8 @@ func NewTileMap(game *Game) *TileMap {
 	tm.solidTiles = []int{0, 16, 21}
 	//tm.tileData = initBlankGrid()
 	tm.initTileMapImages()
-	tm.tileKindMax = len(tm.tileImages)
-	tm.selectedEditTile = 0
+	tm.tileKindMax = len(tm.images)
+	tm.assetID = 0
 	tm.filename_base = TM_MAP_FILENAME_BASE
 	var err error
 	if TM_LOAD_MAP_ON_STARTUP {
@@ -210,16 +210,16 @@ func (tm *TileMap) initTileMapImages_1() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tm.tileImages = []*ebiten.Image{}
-	//tm.tileImages := new(*ebiten.Image)
+	tm.images = []*ebiten.Image{}
+	//tm.images := new(*ebiten.Image)
 	blankImage := ebiten.NewImage(tm.tileSize, tm.tileSize)
 	blankImage.Fill(color.RGBA{0x3f, 0x4f, 0x5f, 0x3f})
-	tm.tileImages = append(tm.tileImages, blankImage)
-	tm.tileImages = append(tm.tileImages, rawImage)
+	tm.images = append(tm.images, blankImage)
+	tm.images = append(tm.images, rawImage)
 
 	imageDir = path.Join(subdir, brickImage1)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	tm.tileImages = append(tm.tileImages, rawImage)
+	tm.images = append(tm.images, rawImage)
 }
 
 func (tm *TileMap) initTileMapImages() {
@@ -233,7 +233,7 @@ func (tm *TileMap) initTileMapImages() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tm.tileImages = cutSpriteSheet(spriteSheetImage, TM_SPRITE_SIZE,
+	tm.images = cutSpriteSheet(spriteSheetImage, TM_SPRITE_SIZE,
 		TM_SPRITE_SIZE, TM_SPRITESHEET_ROWS, TM_SPRITESHEET_ROWS)
 
 	//2nd sheet
@@ -241,7 +241,7 @@ func (tm *TileMap) initTileMapImages() {
 	spriteSheetImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	spriteSheet2 := cutSpriteSheet(spriteSheetImage, TM_SPRITE_SIZE,
 		TM_SPRITE_SIZE, TM_SPRITESHEET_ROWS, TM_SPRITESHEET_ROWS)
-	tm.tileImages = append(tm.tileImages, spriteSheet2...)
+	tm.images = append(tm.images, spriteSheet2...)
 
 }
 
@@ -273,7 +273,7 @@ func (tm *TileMap) Draw(screen *ebiten.Image) {
 			_ = cellValue
 			tileScreenX := (x * tm.tileSize) - worldOffsetX
 			tileScreenY := (y * tm.tileSize) - worldOffsetY
-			DrawImageAt(screen, tm.tileImages[cellValue], tileScreenX, tileScreenY)
+			DrawImageAt(screen, tm.images[cellValue], tileScreenX, tileScreenY)
 		}
 	}
 
@@ -325,14 +325,14 @@ func (tm *TileMap) AddInstanceToGrid(tileX, tileY, assetID int) {
 
 	fmt.Printf("set tile %d %d \n ", tileX, tileY)
 	if tm.validatAssetID(assetID) {
-		tm.selectedEditTile = assetID
+		tm.assetID = assetID
 	}
-	tm.tileData[tileY][tileX] = tm.selectedEditTile
+	tm.tileData[tileY][tileX] = tm.assetID
 	fmt.Printf("tile value %d  \n ", tm.tileData[tileY][tileX])
 
 }
 func (tm *TileMap) validatAssetID(kind int) bool {
-	if kind < len(tm.tileImages) && kind > -1 {
+	if kind < len(tm.images) && kind > -1 {
 		return true
 	} else {
 		return false
@@ -340,17 +340,25 @@ func (tm *TileMap) validatAssetID(kind int) bool {
 
 }
 func (tm *TileMap) CycleAssetKind(direction int) {
-	propAssetID := tm.selectedEditTile + direction
+	propAssetID := tm.assetID + direction
 	isValid := tm.validatAssetID(propAssetID)
 	if isValid {
-		tm.selectedEditTile = propAssetID
+		tm.assetID = propAssetID
 	}
 
-	fmt.Println("Selected tile ", tm.selectedEditTile)
+	fmt.Println("Selected tile ", tm.assetID)
 
 }
 func (tm *TileMap) getAssetID() int {
 
-	return tm.selectedEditTile
+	return tm.assetID
+
+}
+
+func (tm *TileMap) setAssetID(assetID int) {
+
+	if assetID < len(tm.images) && assetID >= 0 {
+		tm.assetID = assetID
+	}
 
 }

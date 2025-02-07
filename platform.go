@@ -126,6 +126,11 @@ func (pfm *PlatformManager) initImages() {
 	pfm.defImage = stretchedImage
 	pfm.images = []*ebiten.Image{}
 	pfm.images = append(pfm.images, pfm.defImage)
+	for i := 0; i < 10; i++ {
+		imageTemp := ebiten.NewImage(PF_DEFAULT_WIDTH, PF_DEFAULT_HEIGHT)
+		DrawImageAt(imageTemp, pfm.defImage, 0, 0)
+		pfm.images = append(pfm.images, imageTemp)
+	}
 
 }
 
@@ -315,15 +320,23 @@ func (tm *PlatformManager) getAssetID() int {
 
 }
 
+func (tm *PlatformManager) setAssetID(assetID int) {
+
+	if assetID < len(tm.images) && assetID >= 0 {
+		tm.assetID = assetID
+	}
+
+}
+
 func (pfm *PlatformManager) AddInstanceToGrid(gridX, gridY, kind int) {
 	emptySlot := pfm.inactiveSlot()
 	if emptySlot != -1 {
 		moveX := 0
 		moveY := 0
-		if kind == 0 {
+		if kind%2 == 0 {
 			moveX = PF_DEF_MOVE_GRID_X
 
-		} else if kind == 1 {
+		} else if kind%2 == 1 {
 			moveY = PF_DEF_MOVE_GRID_Y
 		}
 

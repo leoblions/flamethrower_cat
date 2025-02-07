@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -52,24 +53,8 @@ func (ed *Editor) editHandleClick(clickType ED_CLICK_ENUM, mouseX, mouseY int) {
 
 func (ed *Editor) editHandleLeftClick(mouseX, mouseY int) {
 
-	var component editable
-	switch ed.game.editMode {
-	case EditNone:
-	case EditDecor:
-	case EditEntity:
-		component = ed.game.entityManager
-	case EditFidget:
-		component = ed.game.fidgetManager
-	case EditTile:
-		component = ed.game.tileMap
-	case EditSpawner:
-	case EditPickup:
-		component = ed.game.pickupManager
-	case EditZone:
-	case EditPlatform:
-		component = ed.game.platformManager
+	var component = ed.getActiveEditableComponent()
 
-	}
 	ts := ed.game.tileMap.tileSize
 	gridX := (mouseX + worldOffsetX) / ts
 	gridY := (mouseY + worldOffsetY) / ts
@@ -85,19 +70,48 @@ func (ed *Editor) editHandleRightClick(mouseX, mouseY int) {
 
 }
 
-func (ed *Editor) editHandleMiddleClick(mouseX, mouseY int) {
+func (ed *Editor) setActiveComponentAssetID(assetID int) {
+	component := ed.getActiveEditableComponent()
+	if component != nil {
+		component.setAssetID(assetID)
+	} else {
+		fmt.Println("Editor: Cannot edit nil component, setAssetID")
+	}
+
+}
+
+func (ed *Editor) getActiveEditableComponent() editable {
 	switch ed.game.editMode {
 	case EditNone:
+		return nil
 	case EditDecor:
+		return nil
 	case EditInteractive:
+		return ed.game.fidgetManager
 	case EditTile:
-		ed.game.tileMap.CycleAssetKind(1)
+		return ed.game.tileMap
 	case EditSpawner:
+		return nil
 	case EditPickup:
+		return ed.game.pickupManager
 	case EditZone:
+		return nil
 	case EditFidget:
-		ed.game.fidgetManager.CycleAssetKind(1)
+		return ed.game.fidgetManager
+	case EditPlatform:
+		return ed.game.platformManager
 
+	}
+	return nil
+
+}
+
+func (ed *Editor) editHandleMiddleClick(mouseX, mouseY int) {
+	component := ed.getActiveEditableComponent()
+	if component != nil {
+		component.CycleAssetKind(1)
+	} else {
+		fmt.Println("Editor: Cannot edit nil component")
 	}
 
 }

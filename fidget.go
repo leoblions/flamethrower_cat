@@ -224,3 +224,11 @@ func (tm *FidgetManager) CycleAssetKind(direction int) {
 	fmt.Println("Selected fidget ", tm.assetID)
 
 }
+
+func (tm *FidgetManager) setAssetID(assetID int) {
+
+	if assetID < len(tm.images) && assetID >= 0 {
+		tm.assetID = assetID
+	}
+
+}

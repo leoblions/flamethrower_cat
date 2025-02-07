@@ -78,6 +78,7 @@ type editable interface {
 	AddInstanceToGrid(int, int, int)
 	CycleAssetKind(int)
 	getAssetID() int
+	setAssetID(int)
 }
 
 type Game struct {
