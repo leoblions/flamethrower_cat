@@ -16,6 +16,7 @@ const (
 	PM_BULLET_LENGTH    = 50
 	PM_PROJECTILE_SPEED = 11
 	PM_DELAY_TICKS      = 15
+	PM_IMAGE_FIREBALL   = "fireball.png"
 )
 
 type ProjectileManager struct {
@@ -27,7 +28,16 @@ type ProjectileManager struct {
 	projectileMax    int
 	projectileArray  [PM_MAX_PROJECTILES]*Projectile
 	projectileImage  *ebiten.Image
+	fireballImages   [4]*ebiten.Image
 	projectileDelay  int
+	fireballList     []*Fireball
+}
+
+type Fireball struct {
+	worldX int
+	worldY int
+	frame  int
+	life   int
 }
 
 type Projectile struct {
@@ -47,6 +57,7 @@ func NewProjectileManager(game *Game, kind int) *ProjectileManager {
 	pm.projectileDelay = 0
 	pm.projectileMax = PM_MAX_PROJECTILES
 	pm.projectileArray = [PM_MAX_PROJECTILES]*Projectile{}
+	pm.fireballList = []*Fireball{}
 	if err := pm.initImages(); err != nil {
 		log.Fatal(err)
 	}
@@ -56,9 +67,24 @@ func NewProjectileManager(game *Game, kind int) *ProjectileManager {
 }
 
 func (pm *ProjectileManager) initImages() error {
+	// projectile image
+
 	imageDir := path.Join(subdir, PM_IMAGE_FILENAME)
 	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
 	pm.projectileImage = copyAndStretchImage(rawImage, PM_BULLET_LENGTH, PM_BULLET_SIZE)
+
+	// fireball images
+	imageDir = path.Join(subdir, PM_IMAGE_FIREBALL)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+
+	pm.fireballImages = [4]*ebiten.Image{}
+	for i := 0; i < 4; i++ {
+		x := 50 * i
+		// magick numbers welcome here
+		tempImage := getSubImage(rawImage, x, 0, 50, 50)
+		pm.fireballImages[i] = tempImage
+	}
+
 	return err
 }
 
@@ -75,6 +101,10 @@ func (pm *ProjectileManager) Draw(screen *ebiten.Image) {
 func (pm *ProjectileManager) Update() {
 	for _, v := range pm.projectileArray {
 		if v != nil && v.alive {
+			if v.projectileCollideWall(pm.game) {
+				v.alive = false
+				continue
+			}
 			v.worldX += v.velX
 			v.worldY += v.velY
 			screenX := v.worldX - worldOffsetX
@@ -87,6 +117,11 @@ func (pm *ProjectileManager) Update() {
 		}
 	}
 
+}
+
+func (pr *Projectile) projectileCollideWall(game *Game) bool {
+
+	return game.tileMap.pointCollidedWithSolidTile(pr.worldX+25, pr.worldY+15)
 }
 
 func (pm *ProjectileManager) AddProjectile() {
