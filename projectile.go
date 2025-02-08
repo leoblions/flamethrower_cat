@@ -4,19 +4,24 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 const (
-	PM_MAX_PROJECTILES  = 10
-	PM_IMAGE_FILENAME   = "bullet.png"
-	PM_BULLET_SIZE      = 20
-	PM_BULLET_LENGTH    = 50
-	PM_PROJECTILE_SPEED = 11
-	PM_DELAY_TICKS      = 15
-	PM_IMAGE_FIREBALL   = "fireball.png"
+	PM_MAX_PROJECTILES    = 10
+	PM_IMAGE_FILENAME     = "bullet.png"
+	PM_BULLET_SIZE        = 20
+	PM_BULLET_LENGTH      = 50
+	PM_PROJECTILE_SPEED   = 11
+	PM_DELAY_TICKS        = 15
+	PM_IMAGE_FIREBALL     = "fireball.png"
+	PM_FIREBALL_LIFE      = 100
+	PM_FIRE_ANIMATE_SPEED = 7
+	PM_MAX_FIREBALLS      = 10
+	PM_DEBOUNCE_INTERVAL  = 120000000
 )
 
 type ProjectileManager struct {
@@ -26,6 +31,7 @@ type ProjectileManager struct {
 	startWorldY      int
 	projectileAmount int
 	projectileMax    int
+	debounceLastTime int64
 	projectileArray  [PM_MAX_PROJECTILES]*Projectile
 	projectileImage  *ebiten.Image
 	fireballImages   [4]*ebiten.Image
@@ -38,6 +44,41 @@ type Fireball struct {
 	worldY int
 	frame  int
 	life   int
+}
+
+func NewFireball(worldX, worldY int) *Fireball {
+	fb := &Fireball{worldX, worldY, 0, PM_FIREBALL_LIFE}
+	return fb
+}
+
+func (pm *ProjectileManager) addFireball(worldX, worldY int) {
+	reusedSlot := false
+	for _, v := range pm.fireballList {
+		if v == nil || v.life <= 0 {
+			v.life = PM_FIREBALL_LIFE
+			v.worldX = worldX
+			v.worldY = worldY
+			reusedSlot = true
+		}
+	}
+	if !reusedSlot && len(pm.fireballList) < PM_MAX_FIREBALLS {
+		fb := &Fireball{worldX, worldY, 0, PM_FIREBALL_LIFE}
+		pm.fireballList = append(pm.fireballList, fb)
+	}
+}
+
+func (pm *ProjectileManager) UpdateFireballs() {
+	for _, v := range pm.fireballList {
+		if v != nil && v.life > 0 {
+			change := v.life%PM_FIRE_ANIMATE_SPEED == 0
+			if change && v.frame < 3 {
+				v.frame++
+			} else if change {
+				v.frame = 0
+			}
+			v.life--
+		}
+	}
 }
 
 type Projectile struct {
@@ -56,6 +97,7 @@ func NewProjectileManager(game *Game, kind int) *ProjectileManager {
 	pm.kind = kind
 	pm.projectileDelay = 0
 	pm.projectileMax = PM_MAX_PROJECTILES
+	pm.debounceLastTime = time.Now().UnixNano()
 	pm.projectileArray = [PM_MAX_PROJECTILES]*Projectile{}
 	pm.fireballList = []*Fireball{}
 	if err := pm.initImages(); err != nil {
@@ -96,13 +138,30 @@ func (pm *ProjectileManager) Draw(screen *ebiten.Image) {
 			DrawImageAt(screen, pm.projectileImage, screenX, screenY)
 		}
 	}
+
+	pm.DrawFireBalls(screen)
+}
+
+func (pm *ProjectileManager) DrawFireBalls(screen *ebiten.Image) {
+	for _, v := range pm.fireballList {
+		if v.life <= 0 {
+			return
+		}
+
+		fbCurrImage := pm.fireballImages[v.frame]
+		screenX := v.worldX - worldOffsetX
+		screenY := v.worldY - worldOffsetY
+		DrawImageAt(screen, fbCurrImage, screenX, screenY)
+	}
 }
 
 func (pm *ProjectileManager) Update() {
+	pm.UpdateFireballs()
 	for _, v := range pm.projectileArray {
 		if v != nil && v.alive {
 			if v.projectileCollideWall(pm.game) {
 				v.alive = false
+				pm.addFireball(v.worldX, v.worldY)
 				continue
 			}
 			v.worldX += v.velX
@@ -128,8 +187,14 @@ func (pm *ProjectileManager) AddProjectile() {
 	if &pm.projectileArray == nil {
 		fmt.Println("Array is null")
 	}
-	if pm.projectileDelay > 0 {
-		pm.projectileDelay -= 1
+
+	timerNowNano := time.Now().UnixNano()
+
+	interval := timerNowNano - pm.debounceLastTime
+	if interval > CON_DEBOUNCE_INTERVAL {
+
+		pm.debounceLastTime = timerNowNano
+	} else {
 		return
 	}
 
@@ -147,7 +212,7 @@ func (pm *ProjectileManager) AddProjectile() {
 			startX := pm.game.player.worldX + Xoffset
 			startY := pm.game.player.worldY + (playerHeight / 2)
 			pm.projectileArray[i] = &Projectile{Xvel, 0, startX, startY, true, pm.kind, false}
-			pm.projectileDelay = PM_DELAY_TICKS
+
 			//fmt.Println("Added projectile at index ", i)
 		}
 
