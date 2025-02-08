@@ -123,11 +123,13 @@ func (inp *Input) Update() {
 				inp.game.pickupManager.loadDataFromFile()
 				inp.game.fidgetManager.loadDataFromFile()
 				inp.game.platformManager.loadDataFromFile()
+				inp.game.entityManager.loadDataFromFile()
 			case ebiten.KeyF1:
 				inp.game.tileMap.saveMapToFile()
 				inp.game.pickupManager.saveDataToFile()
 				inp.game.fidgetManager.saveDataToFile()
 				inp.game.platformManager.saveDataToFile()
+				inp.game.entityManager.saveDataToFile()
 			case ebiten.KeyP:
 				inp.game.Pause()
 			case ebiten.KeyF:

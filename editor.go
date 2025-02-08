@@ -100,6 +100,8 @@ func (ed *Editor) getActiveEditableComponent() editable {
 		return ed.game.fidgetManager
 	case EditPlatform:
 		return ed.game.platformManager
+	case EditEntity:
+		return ed.game.entityManager
 
 	}
 	return nil

@@ -10,6 +10,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+/*
+0 = Jackie (non enemy)
+1 = robodog
+2 = worm blob
+3 = ice golem
+4 = evil jackie
+*/
 const (
 	FM_MAX_ENTITY_ROOM          = 10
 	IMAGES_IDLE_SHEET           = "jackieD1.png"
@@ -33,6 +40,8 @@ type EntityManager struct {
 	testRect      *rect
 	assetID       int
 	filename_base string
+
+	EntityManagerImageCollections
 }
 
 type Entity struct {
@@ -54,10 +63,13 @@ type Entity struct {
 }
 
 func NewEntity(kind, startGridX, startGridY int) *Entity {
+	ent := &Entity{}
 	worldX := GAME_TILE_SIZE * startGridX
 	worldY := GAME_TILE_SIZE * startGridY
-	ent := &Entity{}
+	ent.height = EN_SPRITE_H
+	ent.width = EN_SPRITE_W
 	ent.kind = kind
+	ent.alive = true
 	ent.startGridX = startGridX
 	ent.startGridY = startGridY
 	ent.worldX = worldX
@@ -114,6 +126,9 @@ func (entity *Entity) entityFollowPlayer(game *Game) {
 	//fmt.Println("entity folow player")
 	pposX := game.player.worldX
 	//pposY := game.player.worldY
+
+	//fmt.Println("EM ", entity.worldX+EN_STOP_FOLLOW_DIST)
+
 	if entity.worldX+EN_STOP_FOLLOW_DIST < pposX {
 		entity.velX = EN_ENEMY_SPEED_1
 	} else if entity.worldX-EN_STOP_FOLLOW_DIST > pposX {
@@ -160,6 +175,8 @@ func (em *EntityManager) entityMotion() {
 	for _, entity := range em.entityList {
 
 		entity.entityFollowPlayer(em.game)
+
+		//fmt.Println("EM ", entity.entityDetectPlatformEdge(em.game))
 		if entity.entityDetectPlatformEdge(em.game) || entity.entityDetectAdjacentWall(em.game) {
 			entity.velX = 0
 		}
@@ -215,8 +232,10 @@ func (ent *EntityManager) initImages() error {
 	ent.images = []*ebiten.Image{}
 	imageDir := path.Join(subdir, IMAGES_IDLE_SHEET)
 	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
-	starImage := copyAndStretchImage(rawImage, EN_SPRITE_W, EN_SPRITE_H)
-	ent.images = append(ent.images, starImage)
+	jackieImage := copyAndStretchImage(rawImage, EN_SPRITE_W, EN_SPRITE_H)
+	jackieImage = FlipHorizontal(jackieImage)
+
+	ent.images = append(ent.images, jackieImage)
 	//skull
 	imageDir = path.Join(subdir, IMAGES_WALK_SHEET)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
@@ -246,9 +265,9 @@ func (ent *EntityManager) saveDataToFile() {
 	numericData := [][]int{}
 	rows := len(ent.entityList)
 	for i := 0; i < rows; i++ {
-		pickupObj := ent.entityList[i]
-		if pickupObj != nil {
-			record := []int{pickupObj.kind, pickupObj.startGridX, pickupObj.startGridY, pickupObj.uid}
+		entObj := ent.entityList[i]
+		if entObj != nil {
+			record := []int{entObj.kind, entObj.startGridX, entObj.startGridY, entObj.uid}
 			numericData = append(numericData, record)
 		}
 
@@ -282,8 +301,10 @@ func (ent *EntityManager) loadDataFromFile() error {
 	for i := 0; i < FM_MAX_ENTITY_ROOM && i < rows; i++ {
 		v := numericData[i]
 		//ent.entityList[i] = &Entity{v[0], v[1], v[2], v[3], true, true}
-		ent.entityList[i] = NewEntity(v[0], v[1], v[2])
-		ent.entityList[i].uid = v[3]
+		entityTemp := NewEntity(v[0], v[1], v[2])
+		entityTemp.uid = v[3]
+		ent.entityList = append(ent.entityList, entityTemp)
+		fmt.Println("added entity ")
 	}
 	return nil
 }

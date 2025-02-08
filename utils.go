@@ -318,6 +318,38 @@ func copyAndStretchImage(orig *ebiten.Image, newX, newY int) *ebiten.Image {
 
 }
 
+func FlipHorizontal(source *ebiten.Image) *ebiten.Image {
+	// https://ebitengine.org/en/tour/geom.html
+	width := source.Bounds().Dx()
+	height := source.Bounds().Dy()
+	result := ebiten.NewImage(width, height)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(-1, 1)                 //multiply BRC x value of image by -1
+	op.GeoM.Translate(float64(width), 0) // shift image left by its width
+	result.DrawImage(source, op)         //apply geometry matrix
+	return result
+}
+
+func FlipImageXorY(source *ebiten.Image, horizontal bool) *ebiten.Image {
+	// https://ebitengine.org/en/tour/geom.html
+	width := source.Bounds().Dx()
+	height := source.Bounds().Dy()
+	result := ebiten.NewImage(width, height)
+	op := &ebiten.DrawImageOptions{}
+	if horizontal {
+		// flip horizontal
+		op.GeoM.Scale(-1, 1)
+		op.GeoM.Translate(float64(width), 0)
+	} else {
+		// flip vertically
+		op.GeoM.Scale(1, -1)
+		op.GeoM.Translate(0, float64(height))
+	}
+
+	result.DrawImage(source, op) //apply geometry matrix
+	return result
+}
+
 type rect struct {
 	x      int
 	y      int

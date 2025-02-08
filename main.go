@@ -290,6 +290,7 @@ func (g *Game) init() {
 	timerLastTimeMillis = time.Now().UnixNano()
 	g.editMode = EditTile
 	g.godMode = false
+	g.loadLevel((GAME_START_LEVEL))
 
 }
 
@@ -333,6 +334,7 @@ func (g *Game) updateRasterStrings() {
 
 func (g *Game) loadLevel(level int) {
 	g.updateLevel(level)
+	fmt.Println("Load level ", level)
 	g.tileMap.loadCurrentLevelMapFromFile()
 	g.pickupManager.loadDataFromFile()
 	g.fidgetManager.loadDataFromFile()
