@@ -11,35 +11,52 @@ import (
 )
 
 /*
+kinds:
 0 = Jackie (non enemy)
 1 = robodog
 2 = worm blob
 3 = ice golem
 4 = evil jackie
+
+states:
+0 = walk
+1 = attack
+2 = stand
+
+sprite index:
+0 - 3 = left
+3 - 7 = right
 */
 const (
 	FM_MAX_ENTITY_ROOM          = 10
 	IMAGES_IDLE_SHEET           = "jackieD1.png"
 	IMAGES_WALK_SHEET           = "jackieD1.png"
 	IMAGES_ATTACK_SHEET         = "jackieD1.png"
+	IMAGES_JACKIE               = "jackieRS.png"
+	IMAGES_MONSTER              = "enemyWog.png"
 	EN_FILENAME_BASE            = "entity"
 	EN_FILENAME_END             = ".csv"
 	EN_SPRITE_H                 = 100
 	EN_SPRITE_W                 = 100
+	EN_SPRITE_SIZE              = 100
 	EN_CREATE_FILE_IF_NOT_EXIST = true
 	EN_FOLLOW_DIST              = 300
 	EN_ENEMY_SPEED_1            = 2
 	EN_STOP_FOLLOW_DIST         = 100
+	EN_SPRITES_PER_ROW          = 4
+	EN_FRAME_MAX_VAL            = 3
+	EN_FRAME_CHANGE_TICKS       = 30
 )
 
 type EntityManager struct {
-	game          *Game
-	maxEntitys    int
-	entityList    []*Entity
-	images        []*ebiten.Image
-	testRect      *rect
-	assetID       int
-	filename_base string
+	game                 *Game
+	maxEntitys           int
+	entityList           []*Entity
+	images               []*ebiten.Image
+	testRect             *rect
+	assetID              int
+	filename_base        string
+	frameChangeTickCount int
 
 	EntityManagerImageCollections
 }
@@ -60,6 +77,8 @@ type Entity struct {
 	alive      bool
 	onScreen   bool
 	isEnemy    bool
+	frame      int
+	state      int
 }
 
 func NewEntity(kind, startGridX, startGridY int) *Entity {
@@ -73,6 +92,7 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.startGridX = startGridX
 	ent.startGridY = startGridY
 	ent.worldX = worldX
+	ent.direction = 'f'
 	ent.worldY = worldY
 	return ent
 
@@ -90,6 +110,7 @@ func NewEntityManager(game *Game) *EntityManager {
 	fm.filename_base = EN_FILENAME_BASE
 	fm.maxEntitys = FM_MAX_ENTITY_ROOM
 	fm.initImages()
+	fm.initEntityImages()
 	fm.entityList = []*Entity{}
 	//ent.AddPickup(200, 200, 0)
 	//ent.AddPickup(200, 300, 0)
@@ -108,7 +129,8 @@ func (ent *EntityManager) Draw(screen *ebiten.Image) {
 			//fmt.Println("ent draw")
 			screenX := (v.worldX) - worldOffsetX
 			screenY := (v.worldY) - worldOffsetY
-			DrawImageAt(screen, ent.images[v.kind], screenX, screenY)
+			entImage := ent.selectImage(v.kind, v.state, v.frame)
+			DrawImageAt(screen, entImage, screenX, screenY)
 		}
 	}
 
@@ -119,6 +141,19 @@ func (em *EntityManager) Update() {
 	em.checkEntitysTouchedPlayer()
 
 	em.game.activateObject = false
+
+	if em.frameChangeTickCount < EN_FRAME_CHANGE_TICKS {
+		em.frameChangeTickCount++
+	} else {
+		em.frameChangeTickCount = 0
+
+		for _, entity := range em.entityList {
+			if nil != entity && true == entity.alive {
+				em.updateFrame(entity)
+
+			}
+		}
+	}
 
 }
 
@@ -131,11 +166,14 @@ func (entity *Entity) entityFollowPlayer(game *Game) {
 
 	if entity.worldX+EN_STOP_FOLLOW_DIST < pposX {
 		entity.velX = EN_ENEMY_SPEED_1
+		entity.direction = 'l'
 	} else if entity.worldX-EN_STOP_FOLLOW_DIST > pposX {
 		entity.velX = -EN_ENEMY_SPEED_1
+		entity.direction = 'r'
 
 	} else {
 		entity.velX = 0
+		entity.direction = 'f'
 	}
 
 }

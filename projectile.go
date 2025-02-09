@@ -59,6 +59,7 @@ func (pm *ProjectileManager) addFireball(worldX, worldY int) {
 			v.worldX = worldX
 			v.worldY = worldY
 			reusedSlot = true
+			return
 		}
 	}
 	if !reusedSlot && len(pm.fireballList) < PM_MAX_FIREBALLS {
@@ -153,6 +154,7 @@ func (pm *ProjectileManager) DrawFireBalls(screen *ebiten.Image) {
 		screenY := v.worldY - worldOffsetY
 		DrawImageAt(screen, fbCurrImage, screenX, screenY)
 	}
+	//fmt.Println("FB list len ", len(pm.fireballList))
 }
 
 func (pm *ProjectileManager) Update() {
@@ -162,17 +164,20 @@ func (pm *ProjectileManager) Update() {
 			if v.projectileCollideWall(pm.game) {
 				v.alive = false
 				pm.addFireball(v.worldX, v.worldY)
+				//
 				continue
-			}
-			v.worldX += v.velX
-			v.worldY += v.velY
-			screenX := v.worldX - worldOffsetX
-			screenY := v.worldY - worldOffsetY
-			if screenY < 0 || screenY > pm.game.screenHeight ||
-				screenX < 0 || screenX > pm.game.screenWidth {
-				v.alive = false
+			} else {
+				v.worldX += v.velX
+				v.worldY += v.velY
+				screenX := v.worldX - worldOffsetX
+				screenY := v.worldY - worldOffsetY
+				if screenY < 0 || screenY > pm.game.screenHeight ||
+					screenX < 0 || screenX > pm.game.screenWidth {
+					v.alive = false
 
+				}
 			}
+
 		}
 	}
 
@@ -192,7 +197,7 @@ func (pm *ProjectileManager) AddProjectile() {
 
 	interval := timerNowNano - pm.debounceLastTime
 	if interval > CON_DEBOUNCE_INTERVAL {
-
+		//fmt.Println("ADDPR ", interval)
 		pm.debounceLastTime = timerNowNano
 	} else {
 		return
@@ -212,7 +217,7 @@ func (pm *ProjectileManager) AddProjectile() {
 			startX := pm.game.player.worldX + Xoffset
 			startY := pm.game.player.worldY + (playerHeight / 2)
 			pm.projectileArray[i] = &Projectile{Xvel, 0, startX, startY, true, pm.kind, false}
-
+			return
 			//fmt.Println("Added projectile at index ", i)
 		}
 
