@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"path"
 	"strconv"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -46,6 +48,9 @@ const (
 	EN_SPRITES_PER_ROW          = 4
 	EN_FRAME_MAX_VAL            = 3
 	EN_FRAME_CHANGE_TICKS       = 30
+	EN_DEFAULT_HEALTH           = 100
+	EN_SHOOT_FREQUENCY          = 420000000
+	EN_ENTITY_SHOOT_RANGE       = 400
 )
 
 type EntityManager struct {
@@ -57,28 +62,41 @@ type EntityManager struct {
 	assetID              int
 	filename_base        string
 	frameChangeTickCount int
+	enemyLastFiredBullet int64
 
 	EntityManagerImageCollections
 }
 
 type Entity struct {
-	kind       int
-	startGridX int
-	startGridY int
-	uid        int
-	worldX     int
-	worldY     int
-	velX       int
-	velY       int
-	health     int
-	width      int
-	height     int
-	direction  rune
-	alive      bool
-	onScreen   bool
-	isEnemy    bool
-	frame      int
-	state      int
+	lastFiredAtPlayer int64
+	kind              int
+	startGridX        int
+	startGridY        int
+	uid               int
+
+	health int
+	frame  int
+	state  int
+
+	direction rune
+	alive     bool
+	onScreen  bool
+	isEnemy   bool
+	canShoot  bool
+
+	MobileObject
+}
+
+func (ent *Entity) entityTakeDamage(damage int) {
+	if ent.kind != 0 {
+		newHealth := ent.health - damage
+		if newHealth < 0 {
+			ent.health = 0
+			ent.alive = false
+		} else {
+			ent.health = newHealth
+		}
+	}
 }
 
 func NewEntity(kind, startGridX, startGridY int) *Entity {
@@ -88,11 +106,15 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.height = EN_SPRITE_H
 	ent.width = EN_SPRITE_W
 	ent.kind = kind
+	if kind == 1 {
+		ent.canShoot = true
+	}
 	ent.alive = true
 	ent.startGridX = startGridX
 	ent.startGridY = startGridY
 	ent.worldX = worldX
 	ent.direction = 'f'
+	ent.health = EN_DEFAULT_HEALTH
 	ent.worldY = worldY
 	return ent
 
@@ -117,6 +139,7 @@ func NewEntityManager(game *Game) *EntityManager {
 	fm.testRect = &rect{0, 0, EN_SPRITE_W, EN_SPRITE_H}
 	fm.assetID = 0
 	fm.loadDataFromFile()
+	fm.enemyLastFiredBullet = time.Now().UnixNano()
 	fm.testRect = &rect{}
 
 	return fm
@@ -135,13 +158,7 @@ func (ent *EntityManager) Draw(screen *ebiten.Image) {
 	}
 
 }
-
-func (em *EntityManager) Update() {
-	em.entityMotion()
-	em.checkEntitysTouchedPlayer()
-
-	em.game.activateObject = false
-
+func (em *EntityManager) updateEntityListAnimationFrame() {
 	if em.frameChangeTickCount < EN_FRAME_CHANGE_TICKS {
 		em.frameChangeTickCount++
 	} else {
@@ -150,6 +167,43 @@ func (em *EntityManager) Update() {
 		for _, entity := range em.entityList {
 			if nil != entity && true == entity.alive {
 				em.updateFrame(entity)
+
+			}
+		}
+	}
+}
+
+func (em *EntityManager) Update() {
+
+	em.entityMotion()
+	em.checkEntitysTouchedPlayer()
+
+	em.game.activateObject = false
+	em.updateEntityListAnimationFrame()
+	em.entitiesShootAtPlayer()
+
+}
+
+func (entity *Entity) entityPlayerDistance(game *Game) float64 {
+	//fmt.Println("entity folow player")
+	pposX := game.player.worldX
+	pposY := game.player.worldY
+
+	dX := float64(pposX - entity.worldX)
+	dY := float64(pposY - entity.worldY)
+	return math.Sqrt((dX * dX) + (dY * dY))
+
+}
+func (em *EntityManager) entitiesShootAtPlayer() {
+	currTimeNano := time.Now().UnixNano()
+	if abs(em.enemyLastFiredBullet-currTimeNano) > EN_SHOOT_FREQUENCY {
+		em.enemyLastFiredBullet = currTimeNano
+		for _, entity := range em.entityList {
+			if nil != entity && true == entity.alive && entity.canShoot {
+				epDistance := entity.entityPlayerDistance(em.game)
+				if epDistance < EN_ENTITY_SHOOT_RANGE {
+					em.game.projectileManager.AddProjectile(entity.worldX, entity.worldY, 1)
+				}
 
 			}
 		}
@@ -211,8 +265,9 @@ func (entity *Entity) entityDetectAdjacentWall(game *Game) bool {
 func (em *EntityManager) entityMotion() {
 
 	for _, entity := range em.entityList {
-
-		entity.entityFollowPlayer(em.game)
+		if entity.health > 0 {
+			entity.entityFollowPlayer(em.game)
+		}
 
 		//fmt.Println("EM ", entity.entityDetectPlatformEdge(em.game))
 		if entity.entityDetectPlatformEdge(em.game) || entity.entityDetectAdjacentWall(em.game) {
@@ -298,6 +353,25 @@ func (ent *EntityManager) inactiveSlot() int {
 	return -1
 }
 
+func (ent *EntityManager) rectCollideWithEntity(projectile *rect) *Entity {
+	// find usable slot in pickups array, or -1 if there is none
+	for _, v := range ent.entityList {
+		if v != nil && v.alive {
+			ent.testRect.x = v.worldX
+			ent.testRect.y = v.worldY
+			ent.testRect.height = v.height
+			ent.testRect.width = v.width
+			if collideRect(*ent.testRect, *projectile) {
+				return v
+			}
+
+		}
+
+	}
+
+	return nil
+}
+
 func (ent *EntityManager) saveDataToFile() {
 	name := ent.getDataFileURL()
 	numericData := [][]int{}
@@ -377,6 +451,7 @@ func (tm *EntityManager) validatAssetID(kind int) bool {
 	}
 
 }
+
 func (tm *EntityManager) CycleAssetKind(direction int) {
 	propAssetID := tm.assetID + direction
 	isValid := tm.validatAssetID(propAssetID)

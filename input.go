@@ -133,7 +133,9 @@ func (inp *Input) Update() {
 			case ebiten.KeyP:
 				inp.game.Pause()
 			case ebiten.KeyF:
-				inp.game.projectileManager.AddProjectile()
+				startX := inp.game.player.worldX + PM_BULLET_PLAYER_X_OFFSET
+				startY := inp.game.player.worldY + (playerHeight / 2)
+				inp.game.projectileManager.AddProjectile(startX, startY, 0)
 			case ebiten.KeyBackquote:
 				inp.game.console.toggleWindow()
 			case ebiten.KeyShiftLeft:

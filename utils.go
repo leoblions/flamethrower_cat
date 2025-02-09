@@ -357,6 +357,15 @@ type rect struct {
 	height int
 }
 
+type MobileObject struct {
+	velX   int
+	velY   int
+	worldX int
+	worldY int
+	width  int
+	height int
+}
+
 func (r *rect) Clone() *rect {
 	r2 := &rect{}
 	r2.x = r.x
