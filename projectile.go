@@ -19,6 +19,7 @@ const (
 	PM_PROJECTILE_SPEED       = 11
 	PM_DELAY_TICKS            = 15
 	PM_IMAGE_FIREBALL         = "fireball.png"
+	PM_IMAGE_SPLAT            = "splatRing.png"
 	PM_FIREBALL_LIFE          = 100
 	PM_FIRE_ANIMATE_SPEED     = 7
 	PM_MAX_FIREBALLS          = 10
@@ -43,6 +44,7 @@ type ProjectileManager struct {
 	//projectileArrayEnemy  [PM_MAX_PROJECTILES]*Projectile
 	projectileImage []*ebiten.Image
 	fireballImages  [4]*ebiten.Image
+	splatImages     [4]*ebiten.Image
 	projectileDelay int
 	fireballList    []*Fireball
 	testRect        *rect
@@ -51,16 +53,17 @@ type ProjectileManager struct {
 type Fireball struct {
 	worldX int
 	worldY int
+	kind   int
 	frame  int
 	life   int
 }
 
-func NewFireball(worldX, worldY int) *Fireball {
-	fb := &Fireball{worldX, worldY, 0, PM_FIREBALL_LIFE}
+func NewFireball(worldX, worldY, kind int) *Fireball {
+	fb := &Fireball{worldX, worldY, kind, 0, PM_FIREBALL_LIFE}
 	return fb
 }
 
-func (pm *ProjectileManager) addFireball(worldX, worldY int) {
+func (pm *ProjectileManager) addFireball(worldX, worldY, kind int) {
 	reusedSlot := false
 	for _, v := range pm.fireballList {
 		if v == nil || v.life <= 0 {
@@ -72,7 +75,7 @@ func (pm *ProjectileManager) addFireball(worldX, worldY int) {
 		}
 	}
 	if !reusedSlot && len(pm.fireballList) < PM_MAX_FIREBALLS {
-		fb := &Fireball{worldX, worldY, 0, PM_FIREBALL_LIFE}
+		fb := &Fireball{worldX, worldY, kind, 0, PM_FIREBALL_LIFE}
 		pm.fireballList = append(pm.fireballList, fb)
 	}
 }
@@ -141,6 +144,18 @@ func (pm *ProjectileManager) initImages() error {
 		pm.fireballImages[i] = tempImage
 	}
 
+	// splat  images
+	imageDir = path.Join(subdir, PM_IMAGE_SPLAT)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+
+	pm.splatImages = [4]*ebiten.Image{}
+	for i := 0; i < 4; i++ {
+		x := 50 * i
+		// magick numbers welcome here
+		tempImage := getSubImage(rawImage, x, 0, 50, 50)
+		pm.splatImages[i] = tempImage
+	}
+
 	return err
 }
 
@@ -161,8 +176,13 @@ func (pm *ProjectileManager) DrawFireBalls(screen *ebiten.Image) {
 		if v.life <= 0 {
 			return
 		}
+		var fbCurrImage *ebiten.Image
+		if v.kind == 0 {
+			fbCurrImage = pm.fireballImages[v.frame]
+		} else {
+			fbCurrImage = pm.splatImages[v.frame]
+		}
 
-		fbCurrImage := pm.fireballImages[v.frame]
 		screenX := v.worldX - worldOffsetX
 		screenY := v.worldY - worldOffsetY
 		DrawImageAt(screen, fbCurrImage, screenX, screenY)
@@ -180,27 +200,29 @@ func (pm *ProjectileManager) Update() {
 			pm.testRect.height = v.height
 			if v.projectileCollideWall(pm.game) {
 				v.alive = false
-				pm.addFireball(v.worldX, v.worldY)
+				pm.addFireball(v.worldX, v.worldY, v.kind)
 				//
 				continue
 			}
+
+			v.worldX += v.velX
+			v.worldY += v.velY
+			screenX := v.worldX - worldOffsetX
+			screenY := v.worldY - worldOffsetY
 
 			if v.kind == 0 {
 				ent := pm.game.entityManager.rectCollideWithEntity(pm.testRect)
 				if ent != nil {
 					v.alive = false
-					pm.addFireball(v.worldX, v.worldY)
+					pm.addFireball(v.worldX, v.worldY, v.kind)
 					ent.entityTakeDamage(PM_DEF_DAMAGE_AMOUNT)
 					continue
 				}
 
 			} else {
-				v.worldX += v.velX
-				v.worldY += v.velY
-				screenX := v.worldX - worldOffsetX
-				screenY := v.worldY - worldOffsetY
-				if screenY < 0 || screenY > pm.game.screenHeight ||
-					screenX < 0 || screenX > pm.game.screenWidth {
+
+				if v.kind == 0 && (screenY < 0 || screenY > pm.game.screenHeight ||
+					screenX < 0 || screenX > pm.game.screenWidth) {
 					v.alive = false
 
 				}
@@ -258,6 +280,10 @@ func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 			newProj.velY = Yvel
 			newProj.worldX = startX
 			newProj.worldY = startY
+			if kind != 0 {
+				newProj.worldX += PM_ENEMY_BULLET_X_OFFSET
+				newProj.worldY += PM_ENEMY_BULLET_Y_OFFSET
+			}
 			newProj.alive = true
 			newProj.kind = kind
 			newProj.stopped = false
@@ -270,8 +296,8 @@ func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 }
 
 func (pm *ProjectileManager) enemyProjectileGetVelocity(startX, startY int) (float64, float64) {
-	dX := float64(startX + PM_ENEMY_BULLET_X_OFFSET - pm.game.player.worldX)
-	dY := float64(startY + PM_ENEMY_BULLET_Y_OFFSET - pm.game.player.worldY)
+	dX := float64(startX - pm.game.player.worldX)
+	dY := float64(startY - pm.game.player.worldY)
 	if dX > dY {
 		dY = dY / dX
 		dX = 1.0
