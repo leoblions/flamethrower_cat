@@ -73,10 +73,10 @@ type Entity struct {
 	startGridX        int
 	startGridY        int
 	uid               int
-
-	health int
-	frame  int
-	state  int
+	currentImage      *ebiten.Image
+	health            int
+	frame             int
+	state             int
 
 	direction rune
 	alive     bool
@@ -329,12 +329,12 @@ func (ent *EntityManager) initImages() error {
 	jackieImage = FlipHorizontal(jackieImage)
 
 	ent.images = append(ent.images, jackieImage)
-	//skull
+	//walk
 	imageDir = path.Join(subdir, IMAGES_WALK_SHEET)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	skullImage := copyAndStretchImage(rawImage, EN_SPRITE_W, EN_SPRITE_H)
 	ent.images = append(ent.images, skullImage)
-	//spikes
+	//attack
 	imageDir = path.Join(subdir, IMAGES_ATTACK_SHEET)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	spikeImage := copyAndStretchImage(rawImage, EN_SPRITE_W, EN_SPRITE_H)

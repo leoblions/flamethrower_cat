@@ -133,7 +133,7 @@ func grabImagesRowToListFromFilename(filename string, imageSize, gridY, amountX 
 	imageDir := path.Join(subdir, filename)
 	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
 	outputList := []*ebiten.Image{}
-	for i := range amountX - 1 {
+	for i := range amountX {
 		x := i * imageSize
 		y := gridY * imageSize
 		tempImage := getSubImage(rawImage, x, y, imageSize, imageSize)
