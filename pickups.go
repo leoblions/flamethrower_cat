@@ -14,6 +14,8 @@ const (
 	PUM_MAX_PICKUPS   = 10
 	PUM_STAR_IMAGE    = "star.png"
 	PUM_SKULL_IMAGE   = "skull.png"
+	PUM_SKEY_IMAGE    = "steelKey.png"
+	PUM_CHICKEN_IMAGE = "chicken.png"
 	PUM_FILENAME_BASE = "pickup"
 	PUM_FILENAME_END  = ".csv"
 	PUM_PICKUP_H      = 50
@@ -119,19 +121,27 @@ func (pum *PickupManager) checkPickupsTouchedPlayer() {
 func (pum *PickupManager) initImages() error {
 	pum.images = []*ebiten.Image{}
 	var tempImg *ebiten.Image
+
 	// star
 	imageDir := path.Join(subdir, PUM_STAR_IMAGE)
 	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
 	starImage := copyAndStretchImage(rawImage, PUM_PICKUP_W, PUM_PICKUP_H)
 	pum.images = append(pum.images, starImage)
+
 	//skull
 	imageDir = path.Join(subdir, PUM_SKULL_IMAGE)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	skullImage := copyAndStretchImage(rawImage, PUM_PICKUP_W, PUM_PICKUP_H)
 	pum.images = append(pum.images, skullImage)
-	//
+
 	//chicken
-	imageDir = path.Join(subdir, "chicken.png")
+	imageDir = path.Join(subdir, PUM_CHICKEN_IMAGE)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	tempImg = copyAndStretchImage(rawImage, PUM_PICKUP_W, PUM_PICKUP_H)
+	pum.images = append(pum.images, tempImg)
+
+	//key
+	imageDir = path.Join(subdir, PUM_SKEY_IMAGE)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	tempImg = copyAndStretchImage(rawImage, PUM_PICKUP_W, PUM_PICKUP_H)
 	pum.images = append(pum.images, tempImg)

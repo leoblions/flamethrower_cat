@@ -10,6 +10,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+/*
+DATA FILES:
+ kind,  gridX,  gridY,  uid
+
+ KINDS:
+ 0 = BDOOR
+ 1 = BARREL
+ 2 = SPIKES
+
+*/
+
 const (
 	FM_MAX_FIDGETS              = 10
 	DOOR_IMAGE                  = "door1.png"

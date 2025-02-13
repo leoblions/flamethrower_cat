@@ -140,9 +140,15 @@ func (con *Console) executeCommand(command string) {
 		assetID, _ := strconv.Atoi(stringsList[1])
 		fmt.Println("Set assetID ", assetID)
 		con.game.editor.setActiveComponentAssetID(assetID)
-	} else if argsAmount == 2 && editCommandEntered && fillTile {
-		assetID, _ := strconv.Atoi(stringsList[1])
-		fmt.Println("Set assetID ", assetID)
+	} else if editCommandEntered && fillTile {
+		var assetID int
+		if argsAmount == 2 {
+			assetID, _ = strconv.Atoi(stringsList[1])
+		} else {
+			assetID = 0
+		}
+
+		fmt.Println("Set assetID fill ", assetID)
 		con.game.tileMap.fillWithTile(assetID)
 	}
 }
