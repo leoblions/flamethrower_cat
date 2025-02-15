@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
@@ -99,6 +100,19 @@ type Game struct {
 	editMode                        EditMode
 	godMode                         bool
 	activateObject                  bool
+	//sound
+	audioContext *audio.Context
+	//jumpPlayer   *audio.Player
+	//hitPlayer    *audio.Player
+	soundEffectPlayers map[string]*audio.Player
+}
+
+func playSound(plr *audio.Player) error {
+	if err := plr.Rewind(); err != nil {
+		return err
+	}
+	plr.Play()
+	return nil
 }
 
 // mode 0 = gameplay
@@ -283,6 +297,7 @@ func (g *Game) init() {
 	g.warpManager = NewWarpManager(g)
 	g.entityManager = NewEntityManager(g)
 	g.platformManager = NewPlatformManager(g)
+	g.initAudioPlayers()
 	g.score = 0
 	g.lives = 3
 

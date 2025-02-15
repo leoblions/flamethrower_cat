@@ -4,3 +4,4 @@ flamethrower_cat
 flamethrower_cat.exe
 bin/
 build.sh
+_*.go

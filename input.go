@@ -136,6 +136,7 @@ func (inp *Input) Update() {
 				startX := inp.game.player.worldX + PM_BULLET_PLAYER_X_OFFSET
 				startY := inp.game.player.worldY + (playerHeight / 2)
 				inp.game.projectileManager.AddProjectile(startX, startY, 0)
+				_ = playSound(inp.game.soundEffectPlayers["attack"])
 			case ebiten.KeyBackquote:
 				inp.game.console.toggleWindow()
 			case ebiten.KeyShiftLeft:

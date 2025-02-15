@@ -225,6 +225,7 @@ func (p *Player) playerMotion() {
 	if jump && (solidBelowPlayer || plat) && !p.hoverMode {
 		//jump
 		p.velY -= PL_JUMP_HEIGHT
+		_ = playSound(p.game.soundEffectPlayers["jump"])
 	}
 
 	p.velY = clamp(-20.0, 20.0, p.velY)
