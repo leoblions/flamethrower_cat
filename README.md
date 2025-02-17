@@ -1,6 +1,6 @@
 # Flamethrower Cat 
 
-## Flamethrower Cat is 2D platform action game about a cartoon cat using golang and ebitengine. It takes inspiration from SNES/Genesis games like Jazz Jackrabbit, Mario, Aladdin, Sonic, etc.
+## Flamethrower Cat is 2D platform action game about a cartoon cat using golang and ebitengine. It takes inspiration from 80s and 90s platformer games.
 
 ## Building from source:
 * Download and unzip source code
