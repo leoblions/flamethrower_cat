@@ -80,10 +80,10 @@ func (con *Console) executeCommand(command string) {
 	editCommandEntered := false
 	fillTile := false
 	switch functionSelector {
-	case "LOCATION":
+	case "LOCATION", "COORDS":
 		gridX := con.game.player.worldX / GAME_TILE_SIZE
 		gridY := con.game.player.worldY / GAME_TILE_SIZE
-		fmt.Printf("Player grid pos: %d , %d /n", gridX, gridY)
+		fmt.Printf("Player grid pos: %d , %d \n", gridX, gridY)
 
 	case "FLY":
 		con.game.player.hoverMode = !con.game.player.hoverMode

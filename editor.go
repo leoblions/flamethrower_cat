@@ -85,7 +85,7 @@ func (ed *Editor) getActiveEditableComponent() editable {
 	case EditNone:
 		return nil
 	case EditDecor:
-		return nil
+		return ed.game.decorManager
 	case EditInteractive:
 		return ed.game.fidgetManager
 	case EditTile:

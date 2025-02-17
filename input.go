@@ -124,19 +124,21 @@ func (inp *Input) Update() {
 				inp.game.fidgetManager.loadDataFromFile()
 				inp.game.platformManager.loadDataFromFile()
 				inp.game.entityManager.loadDataFromFile()
+				inp.game.decorManager.loadDataFromFile()
 			case ebiten.KeyF1:
 				inp.game.tileMap.saveMapToFile()
 				inp.game.pickupManager.saveDataToFile()
 				inp.game.fidgetManager.saveDataToFile()
 				inp.game.platformManager.saveDataToFile()
 				inp.game.entityManager.saveDataToFile()
+				inp.game.decorManager.saveDataToFile()
 			case ebiten.KeyP:
 				inp.game.Pause()
 			case ebiten.KeyF:
 				startX := inp.game.player.worldX + PM_BULLET_PLAYER_X_OFFSET
 				startY := inp.game.player.worldY + (playerHeight / 2)
 				inp.game.projectileManager.AddProjectile(startX, startY, 0)
-				_ = playSound(inp.game.soundEffectPlayers["attack"])
+				inp.game.audioPlayer.playSoundByID("attack")
 			case ebiten.KeyBackquote:
 				inp.game.console.toggleWindow()
 			case ebiten.KeyShiftLeft:

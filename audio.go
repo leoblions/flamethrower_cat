@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
@@ -18,9 +19,66 @@ const (
 	AUD_FILE_SUBDIR    = "sounds"
 	AUD_FILE_JUMP      = "jump"
 	AUD_FILE_ATTACK    = "attack"
+	AUD_FILE_DOOR      = "door"
+	AUD_FILE_HIT       = "hit"
+	AUD_DO_ASYNC       = true
 )
 
-func (g *Game) initAudioPlayerHelper(soundID string) error {
+type AudioPlayer struct {
+	game         *Game
+	waitgroup    sync.WaitGroup
+	audioContext *audio.Context
+	//jumpPlayer   *audio.Player
+	//hitPlayer    *audio.Player
+	soundEffectPlayers map[string]*audio.Player
+}
+
+func NewAudioPlayer(game *Game) *AudioPlayer {
+	ap := &AudioPlayer{}
+	ap.initAudioPlayers()
+	if AUD_DO_ASYNC {
+		ap.waitgroup = sync.WaitGroup{}
+	}
+
+	return ap
+}
+
+func (ap *AudioPlayer) playSoundPlayer(plr *audio.Player) error {
+	if err := plr.Rewind(); err != nil {
+		return err
+	}
+	plr.Play()
+	return nil
+}
+
+func (ap *AudioPlayer) playSoundByID(soundID string) error {
+	soundEffect := ap.soundEffectPlayers[soundID]
+	if AUD_DO_ASYNC {
+		ap.waitgroup.Add(1)
+		go func() {
+			defer ap.waitgroup.Done()
+			ap.playSoundPlayer(soundEffect)
+		}()
+	} else {
+		ap.playSoundPlayer(soundEffect)
+	}
+	return nil
+}
+
+func (ap *AudioPlayer) playSoundByID_0(soundID string) error {
+	soundEffect := ap.soundEffectPlayers[soundID]
+	//fmt.Println("Play sound ,", soundID)
+	if err := soundEffect.Rewind(); err != nil {
+		return err
+	}
+	soundEffect.Play()
+	return nil
+}
+
+func (ap *AudioPlayer) initAudioPlayerHelper(soundID string) error {
+	if nil == ap.soundEffectPlayers {
+		ap.soundEffectPlayers = map[string]*audio.Player{}
+	}
 
 	//check subdir exists
 	if _, err := os.Stat(AUD_FILE_SUBDIR); errors.Is(err, os.ErrNotExist) {
@@ -43,27 +101,28 @@ func (g *Game) initAudioPlayerHelper(soundID string) error {
 		log.Println("Audio: failed to decode ogg ", soundID)
 		log.Fatal(err)
 	}
-	g.soundEffectPlayers[soundID], err = g.audioContext.NewPlayerF32(streamV)
+	ap.soundEffectPlayers[soundID], err = ap.audioContext.NewPlayerF32(streamV)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//log.Println("Audio: added ogg ", filePath)
+	//log.Println("Audio:  ", filePath)
 	return nil
 }
 
-func (g *Game) initAudioPlayers() error {
+func (ap *AudioPlayer) initAudioPlayers() error {
 	//get the canvas for playing sounds
-	if g.audioContext == nil {
-		g.audioContext = audio.NewContext(AUD_SAMPLE_RATE)
+	if ap.audioContext == nil {
+		ap.audioContext = audio.NewContext(AUD_SAMPLE_RATE)
 	}
 
-	if nil == g.soundEffectPlayers {
-		g.soundEffectPlayers = map[string]*audio.Player{}
+	if nil == ap.soundEffectPlayers {
+		ap.soundEffectPlayers = map[string]*audio.Player{}
 	}
 
-	g.initAudioPlayerHelper(AUD_FILE_JUMP)
+	ap.initAudioPlayerHelper(AUD_FILE_JUMP)
 
-	g.initAudioPlayerHelper(AUD_FILE_ATTACK)
+	ap.initAudioPlayerHelper(AUD_FILE_ATTACK)
 
 	return nil
 

@@ -18,6 +18,7 @@ const (
 	PF_TICK_COUNT_MAX           = 4
 	PF_IMAGE_FILENAME           = "longBrick.png"
 	PF_FILENAME_BASE            = "platform"
+	PF_IMAGE_SUBDIR             = "images"
 	PF_FILENAME_END             = ".csv"
 	PF_MAX_PLATFORMS            = 10
 	PF_MOD_RECT_H               = 3
@@ -114,7 +115,7 @@ func NewPlatformManager(game *Game) *PlatformManager {
 func (pfm *PlatformManager) initImages() {
 	var err error
 	//cwd, _ := os.Getwd()
-	imageDir := path.Join(imageSubdir, PF_IMAGE_FILENAME)
+	imageDir := path.Join(PF_IMAGE_SUBDIR, PF_IMAGE_FILENAME)
 	//fmt.Println(imageDir)
 	var rawImage, stretchedImage *ebiten.Image
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
@@ -85,10 +84,9 @@ type editable interface {
 type Game struct {
 	player *Player
 	input  *Input
-	ball   *Ball
-	//brickGrid *BrickGrid
+
 	tileMap *TileMap
-	rasterStrings
+	gameComponents
 	score                           int
 	lives                           int
 	level                           int
@@ -101,25 +99,14 @@ type Game struct {
 	godMode                         bool
 	activateObject                  bool
 	//sound
-	audioContext *audio.Context
-	//jumpPlayer   *audio.Player
-	//hitPlayer    *audio.Player
-	soundEffectPlayers map[string]*audio.Player
-}
 
-func playSound(plr *audio.Player) error {
-	if err := plr.Rewind(); err != nil {
-		return err
-	}
-	plr.Play()
-	return nil
 }
 
 // mode 0 = gameplay
 // mode 1 = level complete
 // mode 2 = pause
 
-type rasterStrings struct {
+type gameComponents struct {
 	scoreString       *RasterString
 	livesString       *RasterString
 	stageString       *RasterString
@@ -133,6 +120,8 @@ type rasterStrings struct {
 	warpManager       *WarpManager
 	entityManager     *EntityManager
 	platformManager   *PlatformManager
+	decorManager      *DecorManager
+	audioPlayer       *AudioPlayer
 }
 
 func (g *Game) Update() error {
@@ -154,6 +143,7 @@ func (g *Game) Update() error {
 		g.fidgetManager.Update()
 		g.entityManager.Update()
 		g.platformManager.Update()
+		g.decorManager.Update()
 	}
 
 	return nil
@@ -174,6 +164,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.console.Draw(screen)
 	g.entityManager.Draw(screen)
 	g.platformManager.Draw(screen)
+	g.decorManager.Draw(screen)
 
 }
 
@@ -254,7 +245,7 @@ func (g *Game) marqueeMessageComplete() {
 		levelText := fmt.Sprintf("Level: %d", g.level)
 		//g.centerMarquee.centerTextOffset = 40
 		g.centerMarquee.UpdateText(levelText)
-		g.rasterStrings.stageString.stringContent = levelText
+		g.gameComponents.stageString.stringContent = levelText
 		g.centerMarquee.Start()
 		g.centerMarqueeEndActionsComplete = true
 		g.levelCompleteScreenActive = false
@@ -297,7 +288,9 @@ func (g *Game) init() {
 	g.warpManager = NewWarpManager(g)
 	g.entityManager = NewEntityManager(g)
 	g.platformManager = NewPlatformManager(g)
-	g.initAudioPlayers()
+	g.audioPlayer = NewAudioPlayer(g)
+	g.decorManager = NewDecorManager(g)
+	//g.initAudioPlayers()
 	g.score = 0
 	g.lives = 3
 
@@ -311,13 +304,13 @@ func (g *Game) init() {
 
 func (g *Game) initRasterStrings() {
 
-	g.rasterStrings.scoreString = NewRasterString(g, "Score: 0", 10, 10)
+	g.gameComponents.scoreString = NewRasterString(g, "Score: 0", 10, 10)
 
-	g.rasterStrings.centerText = NewRasterString(g, "You won", centerTextX, centerTextY)
-	g.rasterStrings.centerText.visible = false
+	g.gameComponents.centerText = NewRasterString(g, "You won", centerTextX, centerTextY)
+	g.gameComponents.centerText.visible = false
 	levelStr := fmt.Sprintf("Level: %d", g.level)
-	g.rasterStrings.stageString = NewRasterString(g, levelStr, g.screenWidth-90, 10)
-	g.rasterStrings.livesString = NewRasterString(g, "Lives: 3", (g.screenWidth/2)-50, 10)
+	g.gameComponents.stageString = NewRasterString(g, levelStr, g.screenWidth-90, 10)
+	g.gameComponents.livesString = NewRasterString(g, "Lives: 3", (g.screenWidth/2)-50, 10)
 
 }
 
@@ -335,16 +328,16 @@ func (g *Game) incrementScore(points int) {
 }
 
 func (g *Game) drawRasterStrings(screen *ebiten.Image) {
-	g.rasterStrings.scoreString.Draw(screen)
-	g.rasterStrings.centerText.Draw(screen)
-	g.rasterStrings.stageString.Draw(screen)
-	g.rasterStrings.livesString.Draw(screen)
+	g.gameComponents.scoreString.Draw(screen)
+	g.gameComponents.centerText.Draw(screen)
+	g.gameComponents.stageString.Draw(screen)
+	g.gameComponents.livesString.Draw(screen)
 }
 func (g *Game) updateRasterStrings() {
-	g.rasterStrings.scoreString.Update()
-	g.rasterStrings.centerText.Update()
-	g.rasterStrings.stageString.Update()
-	g.rasterStrings.livesString.Update()
+	g.gameComponents.scoreString.Update()
+	g.gameComponents.centerText.Update()
+	g.gameComponents.stageString.Update()
+	g.gameComponents.livesString.Update()
 }
 
 func (g *Game) loadLevel(level int) {
@@ -355,6 +348,7 @@ func (g *Game) loadLevel(level int) {
 	g.fidgetManager.loadDataFromFile()
 	g.entityManager.loadDataFromFile()
 	g.platformManager.loadDataFromFile()
+	g.decorManager.loadDataFromFile()
 
 }
 

@@ -20,6 +20,7 @@ const (
 	brickImage1                      string  = "groundBrown.png"
 	TM_SPRITESHEET_FILE              string  = "tileCT.png"
 	TM_SPRITESHEET_FILE2             string  = "tilesB.png"
+	TM_LAVA_IMAGES                   string  = "decorLava50.png"
 	TM_DEFAULT_MAP_FILENAME          string  = "map0.csv"
 	TM_MAP_FILENAME_BASE             string  = "map"
 	TM_MAP_FILENAME_END              string  = ".csv"
@@ -30,6 +31,11 @@ const (
 	TM_SPRITE_SIZE                   int     = 50
 	TM_SPRITESHEET_ROWS              int     = 4
 	TM_CREATE_BLANK_MAP_IF_NOT_EXIST bool    = true
+	TM_CULLING_DISTANCE_TILES                = 10
+	TM_LAVA_TILE_ID                          = 3
+
+	TM_ANIMATED_TILE_FRAME_MAX = 4
+	TM_ANIMATED_TILE_TICK_MAX  = 10
 )
 
 var (
@@ -45,6 +51,7 @@ type TileMap struct {
 	cols          int
 	tileData      [mapRows][mapCols]int
 	images        []*ebiten.Image
+	imagesLava    []*ebiten.Image
 	screenX       int
 	screenY       int
 	assetID       int
@@ -52,6 +59,17 @@ type TileMap struct {
 	runPan        bool
 	filename_base string
 	solidTiles    []int
+	cullingRegion *CullingRegion
+
+	currentAnimationTick  int
+	currentAnimationFrame int
+}
+
+type CullingRegion struct {
+	tileX1 int
+	tileY1 int
+	tileX2 int
+	tileY2 int
 }
 
 type RectPointCollisionData struct {
@@ -78,9 +96,10 @@ func NewTileMap(game *Game) *TileMap {
 	tm.rows = mapRows
 	tm.cols = mapCols
 	tm.tileSize = GAME_TILE_SIZE
-	tm.solidTiles = []int{0, 16, 21}
+	tm.solidTiles = []int{0, 6, 14, 16, 21}
 	//tm.tileData = initBlankGrid()
 	tm.initTileMapImages()
+	tm.initLavaImages()
 	tm.tileKindMax = len(tm.images)
 	tm.assetID = 0
 	tm.filename_base = TM_MAP_FILENAME_BASE
@@ -94,6 +113,24 @@ func NewTileMap(game *Game) *TileMap {
 		tm.tileData = initBlankGrid()
 	}
 	return tm
+}
+
+func (tm *TileMap) updateCullingRegion() {
+	if nil == tm.cullingRegion {
+		tm.cullingRegion = &CullingRegion{}
+
+	}
+
+	HalfVP := tm.tileSize * TM_CULLING_DISTANCE_TILES / 2
+
+	vpCenterX := (worldOffsetX + HalfVP) / tm.tileSize
+	vpCenterY := (worldOffsetY + HalfVP) / tm.tileSize
+
+	tm.cullingRegion.tileX1 = clamp(0, mapCols, vpCenterX-TM_CULLING_DISTANCE_TILES)
+	tm.cullingRegion.tileX2 = clamp(0, mapCols, vpCenterX+TM_CULLING_DISTANCE_TILES)
+
+	tm.cullingRegion.tileY1 = clamp(0, mapRows, vpCenterY-TM_CULLING_DISTANCE_TILES)
+	tm.cullingRegion.tileY2 = clamp(0, mapRows, vpCenterY+TM_CULLING_DISTANCE_TILES)
 }
 
 func (pum *TileMap) getDataFileURL() string {
@@ -158,6 +195,7 @@ func (tm *TileMap) getSideCollisionData(collider rect) *SideCollisionData {
 func (tm *TileMap) pointCollidedWithSolidTile(worldX, worldY int) bool {
 	gridX := worldX / tm.tileSize
 	gridY := worldY / tm.tileSize
+
 	gridSizeX := len(tm.tileData[0])
 	gridSizeY := len(tm.tileData)
 	if gridX < 0 || gridX >= gridSizeX || gridY < 0 || gridY >= gridSizeY {
@@ -245,6 +283,21 @@ func (tm *TileMap) initTileMapImages() {
 
 }
 
+func (tm *TileMap) initLavaImages() {
+	imageDir := path.Join(subdir, TM_LAVA_IMAGES)
+	//fmt.Println(imageDir)
+	var spriteSheetImage *ebiten.Image
+	var err error
+	spriteSheetImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	//stretchedImage = copyAndStretchImage(rawImage, playerWidth, playerHeight)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	tm.imagesLava = cutSpriteSheet(spriteSheetImage, 50, 50, 5, 1)
+
+}
+
 func initBlankGrid() [mapRows][mapCols]int {
 	outerArray := [mapRows][mapCols]int{}
 	for y := 0; y < mapRows; y++ {
@@ -266,21 +319,44 @@ func (tm *TileMap) fillWithTile(kind int) {
 
 }
 
+func (tm *TileMap) cycleTileOverlay() {
+	if tm.currentAnimationTick < TM_ANIMATED_TILE_TICK_MAX {
+		tm.currentAnimationTick++
+	} else {
+		tm.currentAnimationTick = 0
+		if tm.currentAnimationFrame < TM_ANIMATED_TILE_FRAME_MAX {
+			tm.currentAnimationFrame++
+		} else {
+			tm.currentAnimationFrame = 0
+		}
+	}
+
+}
+
 func (tm *TileMap) Draw(screen *ebiten.Image) {
-	for y := 0; y < len(tm.tileData); y++ {
-		for x := 0; x < len(tm.tileData[y]); x++ {
+	startGX := tm.cullingRegion.tileX1
+	startGY := tm.cullingRegion.tileY1
+	endGX := tm.cullingRegion.tileX2
+	endGY := tm.cullingRegion.tileY2
+	for y := startGY; y < endGY; y++ {
+		for x := startGX; x < endGX; x++ {
 			cellValue := tm.tileData[y][x]
 			_ = cellValue
 			tileScreenX := (x * tm.tileSize) - worldOffsetX
 			tileScreenY := (y * tm.tileSize) - worldOffsetY
 			DrawImageAt(screen, tm.images[cellValue], tileScreenX, tileScreenY)
+			if cellValue == TM_LAVA_TILE_ID {
+				DrawImageAt(screen, tm.imagesLava[tm.currentAnimationFrame], tileScreenX, tileScreenY)
+			}
 		}
 	}
 
 }
 
 func (tm *TileMap) Update() {
+	tm.cycleTileOverlay()
 	tm.shiftViewportToFollowPlayer()
+	tm.updateCullingRegion()
 
 }
 
