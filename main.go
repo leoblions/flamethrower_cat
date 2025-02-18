@@ -34,6 +34,10 @@ const (
 	GAME_LEVEL_DATA_DIR                     = "leveldata"
 	GAME_DATA_MATRIX_END                    = ".csv"
 	GAME_TILE_SIZE                          = 50
+	GAME_HBAR_X                             = 20
+	GAME_HBAR_Y                             = 30
+	GAME_HBAR_W                             = 200
+	GABE_HBAR_H                             = 25
 )
 
 var (
@@ -122,6 +126,7 @@ type gameComponents struct {
 	platformManager   *PlatformManager
 	decorManager      *DecorManager
 	audioPlayer       *AudioPlayer
+	healthBar         *Bar
 }
 
 func (g *Game) Update() error {
@@ -165,6 +170,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.entityManager.Draw(screen)
 	g.platformManager.Draw(screen)
 	g.decorManager.Draw(screen)
+	g.healthBar.Draw(screen)
 
 }
 
@@ -290,6 +296,7 @@ func (g *Game) init() {
 	g.platformManager = NewPlatformManager(g)
 	g.audioPlayer = NewAudioPlayer(g)
 	g.decorManager = NewDecorManager(g)
+	g.healthBar = NewBar(GAME_HBAR_X, GAME_HBAR_Y, GAME_HBAR_W, GABE_HBAR_H)
 	//g.initAudioPlayers()
 	g.score = 0
 	g.lives = 3

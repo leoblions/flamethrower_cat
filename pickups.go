@@ -100,6 +100,18 @@ func (pum *PickupManager) Update() {
 func (pum *PickupManager) pickupItemAction(kind int) {
 	fmt.Println("Pickup item ", kind)
 	pum.game.incrementScore(1)
+	switch kind {
+	case 0:
+		fmt.Println("Got star ", kind)
+		pum.game.player.changeHealth(10)
+	case 1:
+		fmt.Println("Got skull ", kind)
+	case 2:
+		fmt.Println("Got chicken ", kind)
+		pum.game.player.changeHealth(50)
+	case 3:
+		fmt.Println("Got key ", kind)
+	}
 }
 
 func (pum *PickupManager) checkPickupsTouchedPlayer() {

@@ -23,6 +23,7 @@ const (
 	PM_FIREBALL_LIFE          = 100
 	PM_FIRE_ANIMATE_SPEED     = 7
 	PM_MAX_FIREBALLS          = 10
+	PM_COMPONENT_VECTOR_MAX   = 10
 	PM_DEBOUNCE_INTERVAL      = 120000000
 	PM_DEF_DAMAGE_AMOUNT      = 33
 	PM_BULLET_PLAYER_X_OFFSET = 25
@@ -30,6 +31,7 @@ const (
 	PM_ENEMY_BULLET_SPEED     = 3.5
 	PM_ENEMY_BULLET_X_OFFSET  = 50
 	PM_ENEMY_BULLET_Y_OFFSET  = 50
+	PM_DAMEAGE_PLAYER         = 1
 )
 
 type ProjectileManager struct {
@@ -70,6 +72,7 @@ func (pm *ProjectileManager) addFireball(worldX, worldY, kind int) {
 			v.life = PM_FIREBALL_LIFE
 			v.worldX = worldX + PM_FIREBALL_X_OFFSET
 			v.worldY = worldY
+			v.kind = kind
 			reusedSlot = true
 			return
 		}
@@ -198,6 +201,7 @@ func (pm *ProjectileManager) Update() {
 			pm.testRect.y = v.worldY
 			pm.testRect.width = v.width
 			pm.testRect.height = v.height
+
 			if v.projectileCollideWall(pm.game) {
 				v.alive = false
 				pm.addFireball(v.worldX, v.worldY, v.kind)
@@ -210,21 +214,29 @@ func (pm *ProjectileManager) Update() {
 			screenX := v.worldX - worldOffsetX
 			screenY := v.worldY - worldOffsetY
 
+			if v.kind == 0 && (screenY < 0 || screenY > pm.game.screenHeight ||
+				screenX < 0 || screenX > pm.game.screenWidth) {
+				v.alive = false
+				continue
+				// projectile went off screen
+
+			}
+
 			if v.kind == 0 {
 				ent := pm.game.entityManager.rectCollideWithEntity(pm.testRect)
 				if ent != nil {
+					// player projectile hits entity
 					v.alive = false
 					pm.addFireball(v.worldX, v.worldY, v.kind)
 					ent.entityTakeDamage(PM_DEF_DAMAGE_AMOUNT)
 					continue
 				}
 
-			} else {
-
-				if v.kind == 0 && (screenY < 0 || screenY > pm.game.screenHeight ||
-					screenX < 0 || screenX > pm.game.screenWidth) {
-					v.alive = false
-
+			} else if v.kind == 1 {
+				if v.projectileCollidePlayer(pm.game) {
+					//fmt.Println("enemy proj hit player")
+					pm.game.player.changeHealth(-PM_DAMEAGE_PLAYER)
+					continue
 				}
 			}
 
@@ -238,6 +250,11 @@ func (pr *Projectile) projectileCollideWall(game *Game) bool {
 	return game.tileMap.pointCollidedWithSolidTile(pr.worldX+25, pr.worldY+15)
 }
 
+func (pr *Projectile) projectileCollidePlayer(game *Game) bool {
+	game.projectileManager.testRect.x = pr.worldX
+	game.projectileManager.testRect.y = pr.worldY
+	return collideRect(*game.player.collRect, *game.projectileManager.testRect)
+}
 func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 	if &pm.projectileArray == nil {
 		fmt.Println("Array is null")
@@ -298,13 +315,18 @@ func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 func (pm *ProjectileManager) enemyProjectileGetVelocity(startX, startY int) (float64, float64) {
 	dX := float64(startX - pm.game.player.worldX)
 	dY := float64(startY - pm.game.player.worldY)
-	if dX > dY {
-		dY = dY / dX
-		dX = 1.0
-	} else {
-		dX = dX / dY
-		dY = 1.0
+	divisor := 1.0
+	if abs(dX) > abs(dY) {
+		divisor = abs(dX)
+	} else if abs(dX) < abs(dY) {
+		divisor = abs(dY)
 	}
+
+	dX = dX / divisor
+	dY = dY / divisor
+
+	dX = clamp(-PM_COMPONENT_VECTOR_MAX, PM_COMPONENT_VECTOR_MAX, dX)
+	dY = clamp(-PM_COMPONENT_VECTOR_MAX, PM_COMPONENT_VECTOR_MAX, dY)
 	scaledX := -PM_ENEMY_BULLET_SPEED * dX
 	scaledY := -PM_ENEMY_BULLET_SPEED * dY
 	return scaledX, scaledY

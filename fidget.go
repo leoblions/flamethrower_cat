@@ -94,12 +94,20 @@ func (pum *FidgetManager) Update() {
 }
 
 func (pum *FidgetManager) touchFidgetAction(kind, uid int) {
-	//fmt.Println("Fidget touched ", kind)
-	//pum.game.incrementScore(1)
-	if kind == 0 && pum.game.activateObject == true {
-		pum.game.warpManager.warpPlayerToWarpID(uid)
-		pum.game.activateObject = false
+
+	switch kind {
+	case 0:
+		if pum.game.activateObject {
+			pum.game.warpManager.warpPlayerToWarpID(uid)
+			pum.game.activateObject = false
+		}
+	case 1:
+		fmt.Println("player touched the barrel")
+	case 2:
+		pum.game.player.changeHealth(-1)
+
 	}
+
 }
 
 func (pum *FidgetManager) checkFidgetsTouchedPlayer() {

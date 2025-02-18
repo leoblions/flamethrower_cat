@@ -25,17 +25,19 @@ const (
 	PL_GRAVITY_AMOUNT     = 1
 	PL_RUN_BOOST          = 5
 	PL_FRAME_CHANGE_TICKS = 20
+	PL_HEALTH_MAX         = 100
 )
 
 type Player struct {
-	game             *Game
-	worldX           int
-	worldY           int
+	game *Game
+	//worldX           int
+	//worldY           int
 	screenX          int
 	screenY          int
 	state            rune // s=stand w=walk f=fall/jump
 	currentFrame     int
 	currentTickCount int
+	health           int
 	velX             float32
 	velY             float32
 	currImage        *ebiten.Image
@@ -49,6 +51,8 @@ type Player struct {
 	hoverMode        bool
 	faceLeft         bool
 	run              bool
+	collRect         *rect
+	MobileObject
 }
 
 func (p *Player) getWorldColliderRect() rect {
@@ -71,8 +75,12 @@ func NewPlayer(g *Game, startX, startY int) *Player {
 	p.worldY = startY
 	p.hoverMode = false
 	p.run = false
+	p.health = 100
 	p.state = 's'
 	p.currentFrame = 0
+	p.width = playerWidth
+	p.height = playerHeight
+	p.collRect = &rect{p.worldX, p.worldY, p.width, p.height}
 	//p.velX = 2
 	return p
 }
@@ -259,7 +267,17 @@ func (p *Player) playerMotion() {
 		}
 		p.screenX = p.worldX - worldOffsetX
 		p.screenY = p.worldY - worldOffsetY
+
 	}
+	p.updateCollrect()
+
+}
+
+func (p *Player) updateCollrect() {
+	p.collRect.x = p.worldX + 25
+	p.collRect.width = 50
+	p.collRect.y = p.worldY
+
 }
 
 func (p *Player) updateState() {
@@ -288,5 +306,15 @@ func (p *Player) warpPlayerToGridLocation(gridX, gridY int) {
 
 	p.screenX = p.worldX - worldOffsetX
 	p.screenY = p.worldY - worldOffsetY
+
+}
+
+func (p *Player) changeHealth(hitpoints int) {
+
+	healthTemp := p.health
+	healthTemp += hitpoints
+	healthTemp = clamp(0, PL_HEALTH_MAX, healthTemp)
+	p.health = healthTemp
+	p.game.healthBar.FillPercent(p.health)
 
 }

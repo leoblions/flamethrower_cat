@@ -78,6 +78,7 @@ func (con *Console) executeCommand(command string) {
 	argsAmount := len(stringsList)
 	functionSelector := stringsList[0]
 	editCommandEntered := false
+	setHealth := false
 	fillTile := false
 	switch functionSelector {
 	case "LOCATION", "COORDS":
@@ -117,12 +118,15 @@ func (con *Console) executeCommand(command string) {
 		fmt.Println("Set platform")
 		con.game.editMode = EditPlatform
 		editCommandEntered = true
+	case "HEALTH":
+		fmt.Println("Set health")
+		setHealth = true
 	case "FILL":
 		fmt.Println("Fill with tile")
 		con.game.editMode = EditTile
 		editCommandEntered = true
 		fillTile = true
-	case "LEVEL":
+	case "LEVEL", "WARP":
 		if argsAmount == 2 {
 			levelNo, err := strconv.Atoi(strings.Trim(stringsList[1], " "))
 			fmt.Println("Load level ")
@@ -136,7 +140,11 @@ func (con *Console) executeCommand(command string) {
 
 	}
 
-	if argsAmount == 2 && editCommandEntered && !fillTile {
+	if argsAmount == 2 && setHealth {
+		fmt.Println("Set health %%")
+		assetID, _ := strconv.Atoi(stringsList[1])
+		con.game.player.changeHealth(assetID)
+	} else if argsAmount == 2 && editCommandEntered && !fillTile {
 		assetID, _ := strconv.Atoi(stringsList[1])
 		fmt.Println("Set assetID ", assetID)
 		con.game.editor.setActiveComponentAssetID(assetID)
@@ -180,6 +188,8 @@ func keyNameMunger(keyName string) rune {
 			return ' '
 		} else if keyName[0:5] == "Comma" {
 			return ','
+		} else if keyName[0:5] == "Minus" {
+			return '-'
 		}
 
 	case 6:
