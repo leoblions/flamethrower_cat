@@ -134,11 +134,14 @@ func (inp *Input) Update() {
 				inp.game.decorManager.saveDataToFile()
 			case ebiten.KeyP:
 				inp.game.Pause()
+			case ebiten.KeyE:
+				inp.game.activateObject = true
 			case ebiten.KeyF:
 				startX := inp.game.player.worldX + PM_BULLET_PLAYER_X_OFFSET
 				startY := inp.game.player.worldY + (playerHeight / 2)
 				inp.game.projectileManager.AddProjectile(startX, startY, 0)
 				inp.game.audioPlayer.playSoundByID("attack")
+
 			case ebiten.KeyBackquote:
 				inp.game.console.toggleWindow()
 			case ebiten.KeyShiftLeft:

@@ -146,7 +146,7 @@ func (con *Console) executeCommand(command string) {
 		con.game.player.changeHealth(assetID)
 	} else if argsAmount == 2 && editCommandEntered && !fillTile {
 		assetID, _ := strconv.Atoi(stringsList[1])
-		fmt.Println("Set assetID ", assetID)
+		fmt.Println("Console - Set assetID ", assetID)
 		con.game.editor.setActiveComponentAssetID(assetID)
 	} else if editCommandEntered && fillTile {
 		var assetID int

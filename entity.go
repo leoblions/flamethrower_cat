@@ -17,7 +17,7 @@ kinds:
 0 = Jackie (non enemy)
 1 = robodog
 2 = worm blob
-3 = ice golem
+3 = golem
 4 = evil jackie
 
 states:
@@ -51,6 +51,7 @@ const (
 	EN_DEFAULT_HEALTH           = 100
 	EN_SHOOT_FREQUENCY          = 820000000
 	EN_ENTITY_SHOOT_RANGE       = 400
+	EM_KIND_MAX                 = 4
 )
 
 type EntityManager struct {
@@ -116,12 +117,8 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.direction = 'f'
 	ent.health = EN_DEFAULT_HEALTH
 	ent.worldY = worldY
+	//fmt.Println("NewEntity add entity %d", kind)
 	return ent
-
-}
-func (tm *EntityManager) getAssetID() int {
-
-	return tm.assetID
 
 }
 
@@ -463,10 +460,18 @@ func (tm *EntityManager) CycleAssetKind(direction int) {
 
 }
 
+func (tm *EntityManager) getAssetID() int {
+	fmt.Println("EntityManager getAssetID", tm.assetID)
+	return tm.assetID
+
+}
+
 func (tm *EntityManager) setAssetID(assetID int) {
 
-	if assetID < len(tm.images) && assetID >= 0 {
+	if assetID < EM_KIND_MAX && assetID >= 0 {
 		tm.assetID = assetID
 	}
+	tm.assetID = assetID
+	fmt.Println("EntityManager Selected entity type ", tm.assetID)
 
 }

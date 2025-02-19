@@ -13,21 +13,26 @@ import (
 )
 
 const (
-	AUD_SAMPLE_RATE    = 16000
-	AUD_SAMPLE_RATE_A  = 24000
-	AUD_FILE_EXTENSION = ".ogg"
-	AUD_FILE_SUBDIR    = "sounds"
-	AUD_FILE_JUMP      = "jump"
-	AUD_FILE_ATTACK    = "attack"
-	AUD_FILE_DOOR      = "door"
-	AUD_FILE_HIT       = "hit"
-	AUD_DO_ASYNC       = true
+	AUD_SAMPLE_RATE        = 16000
+	AUD_SAMPLE_RATE_A      = 24000
+	AUD_FILE_EXTENSION     = ".ogg"
+	AUD_FILE_SUBDIR        = "sounds"
+	AUD_FILE_JUMP          = "jump"
+	AUD_FILE_ATTACK        = "attack"
+	AUD_FILE_DOOR          = "door"
+	AUD_FILE_HIT           = "hit"
+	AUD_FILE_LAVAHISS      = "lavahiss"
+	AUD_FILE_DOOROPEN      = "dooropen"
+	AUD_FILE_DOORCLOSE     = "doorclose"
+	AUD_FILE_CANLID_REVERB = "canlid_reverb"
+	AUD_DO_ASYNC           = true
 )
 
 type AudioPlayer struct {
-	game         *Game
-	waitgroup    sync.WaitGroup
-	audioContext *audio.Context
+	game             *Game
+	waitgroup        sync.WaitGroup
+	audioContext     *audio.Context
+	soundAffectNames []string
 	//jumpPlayer   *audio.Player
 	//hitPlayer    *audio.Player
 	soundEffectPlayers map[string]*audio.Player
@@ -35,7 +40,17 @@ type AudioPlayer struct {
 
 func NewAudioPlayer(game *Game) *AudioPlayer {
 	ap := &AudioPlayer{}
+	ap.soundAffectNames = []string{
+		"jump",
+		"attack",
+		"hit",
+		"lavahiss",
+		"dooropen",
+		"doorclose",
+		"canlid_reverb",
+	}
 	ap.initAudioPlayers()
+
 	if AUD_DO_ASYNC {
 		ap.waitgroup = sync.WaitGroup{}
 	}
@@ -120,9 +135,13 @@ func (ap *AudioPlayer) initAudioPlayers() error {
 		ap.soundEffectPlayers = map[string]*audio.Player{}
 	}
 
-	ap.initAudioPlayerHelper(AUD_FILE_JUMP)
+	for _, value := range ap.soundAffectNames {
+		ap.initAudioPlayerHelper(value)
+	}
 
-	ap.initAudioPlayerHelper(AUD_FILE_ATTACK)
+	//ap.initAudioPlayerHelper(AUD_FILE_JUMP)
+
+	//ap.initAudioPlayerHelper(AUD_FILE_ATTACK)
 
 	return nil
 

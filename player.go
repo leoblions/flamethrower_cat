@@ -22,10 +22,15 @@ const (
 	PL_SPRITE_H           = 100
 	xMax                  = screenWidth - playerWidth
 	PL_JUMP_HEIGHT        = 20
-	PL_GRAVITY_AMOUNT     = 1
+	PL_GRAVITY_AMOUNT     = 1.0
+	PL_GRAVITY_AMOUNT_W   = 0.5
 	PL_RUN_BOOST          = 5
 	PL_FRAME_CHANGE_TICKS = 20
 	PL_HEALTH_MAX         = 100
+	PL_HITBOX_W           = 50
+	PL_HALF_W             = 50
+	PL_HITBOX_H           = 60
+	PL_LAVA_DAMAGE_AMOUNT = 1
 )
 
 type Player struct {
@@ -51,7 +56,9 @@ type Player struct {
 	hoverMode        bool
 	faceLeft         bool
 	run              bool
-	collRect         *rect
+	isUnderwater     bool
+
+	collRect *rect
 	MobileObject
 }
 
@@ -274,9 +281,17 @@ func (p *Player) playerMotion() {
 }
 
 func (p *Player) updateCollrect() {
-	p.collRect.x = p.worldX + 25
-	p.collRect.width = 50
+	p.collRect.x = p.worldX + 30
+	p.collRect.width = PL_HITBOX_W
+	p.collRect.height = PL_HITBOX_H
 	p.collRect.y = p.worldY
+
+}
+
+func (p *Player) checkPlayerStandingOnLava() bool {
+	pX := p.worldX + PL_HALF_W
+	pY := p.worldY + PL_SPRITE_H
+	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_LAVA_TILE_ID)
 
 }
 
@@ -297,6 +312,10 @@ func (p *Player) Update() {
 	p.playerMotion()
 	p.updateState()
 	p.selectImage()
+	if p.checkPlayerStandingOnLava() {
+		p.changeHealth(-PL_LAVA_DAMAGE_AMOUNT)
+		p.game.audioPlayer.playSoundByID("lavahiss")
+	}
 }
 
 func (p *Player) warpPlayerToGridLocation(gridX, gridY int) {

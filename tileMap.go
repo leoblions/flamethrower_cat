@@ -33,6 +33,7 @@ const (
 	TM_CREATE_BLANK_MAP_IF_NOT_EXIST bool    = true
 	TM_CULLING_DISTANCE_TILES                = 10
 	TM_LAVA_TILE_ID                          = 3
+	TM_WATER_TILE_ID                         = 14
 
 	TM_ANIMATED_TILE_FRAME_MAX = 4
 	TM_ANIMATED_TILE_TICK_MAX  = 10
@@ -205,6 +206,23 @@ func (tm *TileMap) pointCollidedWithSolidTile(worldX, worldY int) bool {
 		return false
 	} else {
 		return true
+	}
+
+}
+
+func (tm *TileMap) pointCollidedWithGivenTileKind(worldX, worldY, kind int) bool {
+	gridX := worldX / tm.tileSize
+	gridY := worldY / tm.tileSize
+
+	gridSizeX := len(tm.tileData[0])
+	gridSizeY := len(tm.tileData)
+	if gridX < 0 || gridX >= gridSizeX || gridY < 0 || gridY >= gridSizeY {
+		return false
+	}
+	if kind == tm.tileData[gridY][gridX] {
+		return true
+	} else {
+		return false
 	}
 
 }

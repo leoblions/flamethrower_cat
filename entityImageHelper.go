@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"path"
 
@@ -27,7 +26,7 @@ func (em *EntityManager) initEntityImages() error {
 	em.jackieImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 1)
 	em.jackieImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 2)
 	em.jackieImagesS = grabImagesRowToListFromFilename(IMAGES_JACKIE, 100, 3, 2)
-	fmt.Println("Jackie images", len(em.jackieImages))
+	//fmt.Println("Jackie images", len(em.jackieImages))
 	// robo dog
 	em.dogImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
 	em.dogImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
@@ -37,10 +36,10 @@ func (em *EntityManager) initEntityImages() error {
 	em.blobImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 1)
 	em.blobImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
 
-	// worm blob
+	// golem
 
 	em.golemImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 3)
-	em.golemImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 3)
+	em.golemImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
 
 	return err
 

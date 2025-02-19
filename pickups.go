@@ -100,6 +100,7 @@ func (pum *PickupManager) Update() {
 func (pum *PickupManager) pickupItemAction(kind int) {
 	fmt.Println("Pickup item ", kind)
 	pum.game.incrementScore(1)
+	pum.game.audioPlayer.playSoundByID("canlid_reverb")
 	switch kind {
 	case 0:
 		fmt.Println("Got star ", kind)

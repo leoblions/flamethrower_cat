@@ -18,29 +18,40 @@ DATA FILES:
  0 = BDOOR
  1 = BARREL
  2 = SPIKES
+ 3 = TUNNEL
 
 */
 
 const (
 	FM_MAX_FIDGETS              = 10
 	DOOR_IMAGE                  = "door1.png"
+	TUNNEL_IMAGE                = "door2.png"
 	BARREL_IMAGE                = "barrel1.png"
 	SPIKES_IMAGE                = "spikes.png"
+	TRAFFICLIGHT_IMAGE          = "trafficLight.png"
 	FM_FILENAME_BASE            = "fidget"
 	FM_FILENAME_END             = ".csv"
 	FM_SPRITE_H                 = 100
 	FM_SPRITE_W                 = 50
+	FM_SPRITE_W_SL              = 100
 	FM_CREATE_FILE_IF_NOT_EXIST = true
+	FM_TL_CHANGE_TICKS          = 200
 )
 
 type FidgetManager struct {
-	game          *Game
-	maxFidgets    int
-	fidgetsArray  [FM_MAX_FIDGETS]*Fidget
-	images        []*ebiten.Image
-	testRect      *rect
-	assetID       int
-	filename_base string
+	game               *Game
+	maxFidgets         int
+	fidgetsArray       [FM_MAX_FIDGETS]*Fidget
+	images             []*ebiten.Image
+	trafficLightImages []*ebiten.Image
+	testRect           *rect
+	assetID            int
+	filename_base      string
+	tlIndex            int
+	tlEnabled          bool
+	tlCycler           func() int
+
+	touchedtrafficLightLastTick bool
 }
 
 type Fidget struct {
@@ -64,10 +75,42 @@ func NewFidgetManager(game *Game) *FidgetManager {
 	//pum.AddPickup(200, 300, 0)
 	fm.testRect = &rect{0, 0, FM_SPRITE_W, FM_SPRITE_H}
 	fm.assetID = 0
+
+	fm.tlCycler = fm.getTLCycler()
+	fm.tlIndex = fm.tlCycler()
+	fm.tlEnabled = true
+
 	fm.loadDataFromFile()
 
 	return fm
 }
+func (tm *FidgetManager) getTLCycler() func() int {
+	// closure function for getting state of traffic lights
+	currentTick := 0
+	currentState := 1
+	cyclerClosure := func() int {
+		if currentTick >= FM_TL_CHANGE_TICKS {
+			currentTick = 0
+			if currentState < 3 {
+				currentState++
+			} else {
+				currentState = 1
+			}
+		} else {
+			currentTick++
+
+		}
+		if tm.tlEnabled {
+			return currentState
+		} else {
+			return 0 // lights disabled
+		}
+
+	}
+	return cyclerClosure
+
+}
+
 func (tm *FidgetManager) getAssetID() int {
 
 	return tm.assetID
@@ -80,6 +123,7 @@ func (pum *FidgetManager) Draw(screen *ebiten.Image) {
 		if nil != v && true == v.alive {
 			screenX := (pum.game.tileMap.tileSize * v.gridX) - worldOffsetX
 			screenY := (pum.game.tileMap.tileSize * v.gridY) - worldOffsetY
+
 			DrawImageAt(screen, pum.images[v.kind], screenX, screenY)
 		}
 	}
@@ -90,16 +134,23 @@ func (pum *FidgetManager) Update() {
 	pum.checkFidgetsTouchedPlayer()
 
 	pum.game.activateObject = false
+	pum.tlIndex = pum.tlCycler()
+	pum.images[4] = pum.trafficLightImages[pum.tlIndex]
+
+}
+
+func (pum *FidgetManager) checkPlayerRanRedlight() {
 
 }
 
 func (pum *FidgetManager) touchFidgetAction(kind, uid int) {
 
 	switch kind {
-	case 0:
+	case 0, 3:
 		if pum.game.activateObject {
 			pum.game.warpManager.warpPlayerToWarpID(uid)
 			pum.game.activateObject = false
+			pum.game.audioPlayer.playSoundByID("dooropen")
 		}
 	case 1:
 		fmt.Println("player touched the barrel")
@@ -112,13 +163,14 @@ func (pum *FidgetManager) touchFidgetAction(kind, uid int) {
 
 func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 
-	playerRect := pum.game.player.getWorldColliderRect()
+	//playerRect := pum.game.player.getWorldColliderRect()
+	playerRect := pum.game.player.collRect
 	for _, v := range pum.fidgetsArray {
 		if nil != v && true == v.alive {
 			pum.testRect.x = pum.game.tileMap.tileSize * v.gridX
 			pum.testRect.y = pum.game.tileMap.tileSize * v.gridY
 
-			if collideRect(playerRect, *pum.testRect) {
+			if collideRect(*playerRect, *pum.testRect) {
 				//v.alive = false
 				pum.touchFidgetAction(v.kind, v.uid)
 			}
@@ -128,20 +180,32 @@ func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 
 func (pum *FidgetManager) initImages() error {
 	pum.images = []*ebiten.Image{}
+	// door
 	imageDir := path.Join(subdir, DOOR_IMAGE)
 	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
-	starImage := copyAndStretchImage(rawImage, FM_SPRITE_W, FM_SPRITE_H)
-	pum.images = append(pum.images, starImage)
-	//skull
+	image := copyAndStretchImage(rawImage, FM_SPRITE_W, FM_SPRITE_H)
+	pum.images = append(pum.images, image)
+	// barrel
 	imageDir = path.Join(subdir, BARREL_IMAGE)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	skullImage := copyAndStretchImage(rawImage, FM_SPRITE_W, FM_SPRITE_H)
-	pum.images = append(pum.images, skullImage)
-	//spikes
+	image = copyAndStretchImage(rawImage, FM_SPRITE_W, FM_SPRITE_H)
+	pum.images = append(pum.images, image)
+	// spikes
 	imageDir = path.Join(subdir, SPIKES_IMAGE)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	spikeImage := copyAndStretchImage(rawImage, FM_SPRITE_W, FM_SPRITE_H)
-	pum.images = append(pum.images, spikeImage)
+	image = copyAndStretchImage(rawImage, FM_SPRITE_W, FM_SPRITE_H)
+	pum.images = append(pum.images, image)
+	// tunnel
+	imageDir = path.Join(subdir, TUNNEL_IMAGE)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	image = copyAndStretchImage(rawImage, FM_SPRITE_W, FM_SPRITE_H)
+	pum.images = append(pum.images, image)
+	// stoplight
+	imageDir = path.Join(subdir, TRAFFICLIGHT_IMAGE)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	image = getSubImage(rawImage, 0, 0, FM_SPRITE_W_SL, FM_SPRITE_H)
+	pum.trafficLightImages = grabImagesRowToList(rawImage, 100, 0, 4)
+	pum.images = append(pum.images, image)
 	return err
 
 }

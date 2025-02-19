@@ -14,8 +14,8 @@ const (
 )
 
 type Editor struct {
-	game    *Game
-	assetID int
+	game *Game
+	//assetID int
 }
 
 func NewEditor(game *Game) *Editor {
@@ -74,6 +74,7 @@ func (ed *Editor) setActiveComponentAssetID(assetID int) {
 	component := ed.getActiveEditableComponent()
 	if component != nil {
 		component.setAssetID(assetID)
+		fmt.Println("Editor:   component, setAssetID", assetID)
 	} else {
 		fmt.Println("Editor: Cannot edit nil component, setAssetID")
 	}
