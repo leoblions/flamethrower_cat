@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"path"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type EntityManagerImageCollections struct {
+type EntityManagerImageCollections_0 struct {
 	jackieImages  []*ebiten.Image
 	jackieImagesA []*ebiten.Image
 	jackieImagesS []*ebiten.Image
@@ -20,26 +21,44 @@ type EntityManagerImageCollections struct {
 	golemImagesA  []*ebiten.Image
 }
 
+type AllEntitySpriteCollections struct {
+	jackieSC *EntitySpriteCollection
+	dogSC    *EntitySpriteCollection
+	blobSC   *EntitySpriteCollection
+	golemSC  *EntitySpriteCollection
+}
+
+type EntitySpriteCollection struct {
+	walk   []*ebiten.Image
+	attack []*ebiten.Image
+	stand  []*ebiten.Image
+}
+
 func (em *EntityManager) initEntityImages() error {
 	var err error
 	// jackie
-	em.jackieImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 1)
-	em.jackieImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 2)
-	em.jackieImagesS = grabImagesRowToListFromFilename(IMAGES_JACKIE, 100, 3, 2)
+	em.jackieSC = &EntitySpriteCollection{}
+	em.jackieSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 1)
+	em.jackieSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 2)
+	em.jackieSC.stand = grabImagesRowToListFromFilename(IMAGES_JACKIE, 100, 3, 2)
 	//fmt.Println("Jackie images", len(em.jackieImages))
 	// robo dog
-	em.dogImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
-	em.dogImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
+	em.dogSC = &EntitySpriteCollection{}
+	em.dogSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
+	em.dogSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
+	em.dogSC.stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
 
 	// worm blob
-
-	em.blobImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 1)
-	em.blobImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
+	em.blobSC = &EntitySpriteCollection{}
+	em.blobSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 1)
+	em.blobSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
+	em.blobSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
 
 	// golem
-
-	em.golemImages, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 3)
-	em.golemImagesA, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
+	em.golemSC = &EntitySpriteCollection{}
+	em.golemSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 3)
+	em.golemSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
+	em.golemSC.stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
 
 	return err
 
@@ -68,7 +87,7 @@ func (em *EntityManager) updateFrame(ent *Entity) {
 	// right: 4 5 6 7
 
 	var leftRune, rightRune rune
-
+	// swap image directions if not robo dog
 	if ent.kind != 0 {
 		leftRune = 'l'
 		rightRune = 'r'
@@ -76,15 +95,21 @@ func (em *EntityManager) updateFrame(ent *Entity) {
 		leftRune = 'r'
 		rightRune = 'l'
 	}
-
+	changeDirection := false
+	if ent.direction != ent.prevDirection {
+		changeDirection = true
+	}
+	fmt.Println("updateFrame")
 	if ent.direction == leftRune {
-		if ent.frame > 2 || ent.velX == 0 {
+		fmt.Println("left")
+		if ent.frame > 2 || changeDirection || ent.velX == 0 {
 			ent.frame = 0
 		} else {
 			ent.frame++
 		}
 	} else if ent.direction == rightRune {
-		if ent.frame > 6 || ent.velX == 0 {
+		fmt.Println("right")
+		if ent.frame > 6 || changeDirection || ent.velX == 0 {
 			ent.frame = 4
 		} else {
 			ent.frame++
@@ -148,39 +173,45 @@ func (em *EntityManager) selectImage(entityKind, state, frame int) *ebiten.Image
 	var imageList []*ebiten.Image
 	switch entityKind {
 
-	case 0, 4:
+	case 0, 4: // jackie
 		switch state {
 		case 0:
-			imageList = em.jackieImages
+			imageList = em.jackieSC.walk
 		case 1:
-			imageList = em.jackieImagesA
+			imageList = em.jackieSC.attack
 		case 2:
-			imageList = em.jackieImagesS
+			imageList = em.jackieSC.stand
 
 		}
-	case 1:
+	case 1: // dog
 		switch state {
 		case 0:
-			imageList = em.dogImages
+			imageList = em.dogSC.walk
 		case 1:
-			imageList = em.dogImagesA
+			imageList = em.dogSC.attack
+		case 2:
+			imageList = em.dogSC.stand
 
 		}
 
-	case 2:
+	case 2: //blob
 		switch state {
 		case 0:
-			imageList = em.blobImages
+			imageList = em.blobSC.walk
 		case 1:
-			imageList = em.blobImagesA
+			imageList = em.blobSC.attack
+		case 2:
+			imageList = em.blobSC.stand
 
 		}
-	case 3:
+	case 3: // golem
 		switch state {
 		case 0:
-			imageList = em.golemImages
+			imageList = em.golemSC.walk
 		case 1:
-			imageList = em.golemImagesA
+			imageList = em.golemSC.attack
+		case 2:
+			imageList = em.golemSC.stand
 
 		}
 

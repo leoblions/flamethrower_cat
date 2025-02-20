@@ -65,7 +65,7 @@ type EntityManager struct {
 	frameChangeTickCount int
 	enemyLastFiredBullet int64
 
-	EntityManagerImageCollections
+	AllEntitySpriteCollections
 }
 
 type Entity struct {
@@ -79,11 +79,12 @@ type Entity struct {
 	frame             int
 	state             int
 
-	direction rune
-	alive     bool
-	onScreen  bool
-	isEnemy   bool
-	canShoot  bool
+	direction     rune
+	prevDirection rune
+	alive         bool
+	onScreen      bool
+	isEnemy       bool
+	canShoot      bool
 
 	MobileObject
 }
@@ -217,13 +218,20 @@ func (entity *Entity) entityFollowPlayer(game *Game) {
 
 	if entity.worldX+EN_STOP_FOLLOW_DIST < pposX {
 		entity.velX = EN_ENEMY_SPEED_1
-		entity.direction = 'l'
+
 	} else if entity.worldX-EN_STOP_FOLLOW_DIST > pposX {
 		entity.velX = -EN_ENEMY_SPEED_1
-		entity.direction = 'r'
 
 	} else {
 		entity.velX = 0
+	}
+
+	if entity.worldX < pposX {
+		entity.direction = 'l'
+	} else if entity.worldX > pposX {
+		entity.direction = 'r'
+
+	} else {
 		entity.direction = 'f'
 	}
 
@@ -288,6 +296,8 @@ func (em *EntityManager) entityMotion() {
 		// update position
 		entity.worldX += entity.velX
 		entity.worldY += entity.velY
+
+		entity.prevDirection = entity.direction
 
 	}
 
