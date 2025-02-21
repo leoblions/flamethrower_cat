@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"path"
 
@@ -99,23 +98,19 @@ func (em *EntityManager) updateFrame(ent *Entity) {
 	if ent.direction != ent.prevDirection {
 		changeDirection = true
 	}
-	fmt.Println("updateFrame")
 	if ent.direction == leftRune {
-		fmt.Println("left")
 		if ent.frame > 2 || changeDirection || ent.velX == 0 {
 			ent.frame = 0
 		} else {
 			ent.frame++
 		}
 	} else if ent.direction == rightRune {
-		fmt.Println("right")
 		if ent.frame > 6 || changeDirection || ent.velX == 0 {
 			ent.frame = 4
 		} else {
 			ent.frame++
 		}
 	} else {
-		//fmt.Println("Ent unknown condition")
 	}
 
 }
