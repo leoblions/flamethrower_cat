@@ -139,7 +139,13 @@ func (inp *Input) Update() {
 			case ebiten.KeyF:
 				startX := inp.game.player.worldX + PM_BULLET_PLAYER_X_OFFSET
 				startY := inp.game.player.worldY + (playerHeight / 2)
-				inp.game.projectileManager.AddProjectile(startX, startY, 0)
+				if inp.game.player.isUnderwater {
+					inp.game.projectileManager.AddProjectile(startX, startY, 2)
+					//fmt.Printf("bubble")
+				} else {
+					inp.game.projectileManager.AddProjectile(startX, startY, 0)
+				}
+
 				inp.game.audioPlayer.playSoundByID("attack")
 
 			case ebiten.KeyBackquote:

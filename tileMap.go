@@ -21,6 +21,7 @@ const (
 	TM_SPRITESHEET_FILE              string  = "tileCT.png"
 	TM_SPRITESHEET_FILE2             string  = "tilesB.png"
 	TM_LAVA_IMAGES                   string  = "decorLava50.png"
+	TM_WATER_IMAGES                  string  = "waterOverlay.png"
 	TM_DEFAULT_MAP_FILENAME          string  = "map0.csv"
 	TM_MAP_FILENAME_BASE             string  = "map"
 	TM_MAP_FILENAME_END              string  = ".csv"
@@ -33,7 +34,7 @@ const (
 	TM_CREATE_BLANK_MAP_IF_NOT_EXIST bool    = true
 	TM_CULLING_DISTANCE_TILES                = 10
 	TM_LAVA_TILE_ID                          = 3
-	TM_WATER_TILE_ID                         = 14
+	TM_WATER_TILE_ID                         = 6
 
 	TM_ANIMATED_TILE_FRAME_MAX = 4
 	TM_ANIMATED_TILE_TICK_MAX  = 10
@@ -53,6 +54,7 @@ type TileMap struct {
 	tileData      [mapRows][mapCols]int
 	images        []*ebiten.Image
 	imagesLava    []*ebiten.Image
+	imagesWater   []*ebiten.Image
 	screenX       int
 	screenY       int
 	assetID       int
@@ -100,7 +102,7 @@ func NewTileMap(game *Game) *TileMap {
 	tm.solidTiles = []int{0, 6, 14, 16, 21}
 	//tm.tileData = initBlankGrid()
 	tm.initTileMapImages()
-	tm.initLavaImages()
+	tm.initAnimatedTileImages()
 	tm.tileKindMax = len(tm.images)
 	tm.assetID = 0
 	tm.filename_base = TM_MAP_FILENAME_BASE
@@ -301,18 +303,27 @@ func (tm *TileMap) initTileMapImages() {
 
 }
 
-func (tm *TileMap) initLavaImages() {
+func (tm *TileMap) initAnimatedTileImages() {
+	// lava images
 	imageDir := path.Join(subdir, TM_LAVA_IMAGES)
-	//fmt.Println(imageDir)
+
 	var spriteSheetImage *ebiten.Image
 	var err error
 	spriteSheetImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	//stretchedImage = copyAndStretchImage(rawImage, playerWidth, playerHeight)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 	tm.imagesLava = cutSpriteSheet(spriteSheetImage, 50, 50, 5, 1)
+	// water images
+	imageDir = path.Join(subdir, TM_WATER_IMAGES)
+
+	spriteSheetImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	tm.imagesWater = cutSpriteSheet(spriteSheetImage, 50, 50, 5, 1)
 
 }
 
@@ -365,6 +376,8 @@ func (tm *TileMap) Draw(screen *ebiten.Image) {
 			DrawImageAt(screen, tm.images[cellValue], tileScreenX, tileScreenY)
 			if cellValue == TM_LAVA_TILE_ID {
 				DrawImageAt(screen, tm.imagesLava[tm.currentAnimationFrame], tileScreenX, tileScreenY)
+			} else if cellValue == TM_WATER_TILE_ID {
+				DrawImageAt(screen, tm.imagesWater[tm.currentAnimationFrame], tileScreenX, tileScreenY)
 			}
 		}
 	}

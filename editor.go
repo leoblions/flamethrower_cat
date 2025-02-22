@@ -30,7 +30,9 @@ func (ed *Editor) editHandleWheel(wheelY float64) {
 	case EditTile:
 		ed.game.tileMap.CycleAssetKind(int(wheelY))
 	case EditPickup:
-		ed.game.tileMap.CycleAssetKind(int(wheelY))
+		ed.game.pickupManager.CycleAssetKind(int(wheelY))
+	case EditDecor:
+		ed.game.decorManager.CycleAssetKind(int(wheelY))
 	}
 
 }

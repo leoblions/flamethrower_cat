@@ -288,6 +288,13 @@ func (p *Player) updateCollrect() {
 
 }
 
+func (p *Player) checkPlayerUnderwater() bool {
+	pX := p.worldX + PL_HALF_W
+	pY := p.worldY + 20
+	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_WATER_TILE_ID)
+
+}
+
 func (p *Player) checkPlayerStandingOnLava() bool {
 	pX := p.worldX + PL_HALF_W
 	pY := p.worldY + PL_SPRITE_H
@@ -312,10 +319,13 @@ func (p *Player) Update() {
 	p.playerMotion()
 	p.updateState()
 	p.selectImage()
+
 	if p.checkPlayerStandingOnLava() {
 		p.changeHealth(-PL_LAVA_DAMAGE_AMOUNT)
 		p.game.audioPlayer.playSoundByID("lavahiss")
 	}
+
+	p.isUnderwater = p.checkPlayerUnderwater()
 }
 
 func (p *Player) warpPlayerToGridLocation(gridX, gridY int) {

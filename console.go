@@ -126,12 +126,23 @@ func (con *Console) executeCommand(command string) {
 		con.game.editMode = EditTile
 		editCommandEntered = true
 		fillTile = true
-	case "LEVEL", "WARP":
+	case "LEVEL":
 		if argsAmount == 2 {
 			levelNo, err := strconv.Atoi(strings.Trim(stringsList[1], " "))
 			fmt.Println("Load level ")
 			if err == nil {
 				con.game.loadLevel(levelNo)
+			} else {
+				log.Println("Invalid arg: ", stringsList[1])
+				log.Println(err)
+			}
+		}
+	case "WARP":
+		if argsAmount == 2 {
+			warp, err := strconv.Atoi(strings.Trim(stringsList[1], " "))
+			fmt.Println("Warp zone no. ", warp)
+			if err == nil {
+				con.game.warpManager.warpPlayerToWarpID(warp)
 			} else {
 				log.Println("Invalid arg: ", stringsList[1])
 				log.Println(err)

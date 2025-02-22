@@ -20,6 +20,7 @@ const (
 	PM_DELAY_TICKS            = 15
 	PM_IMAGE_FIREBALL         = "fireball.png"
 	PM_IMAGE_SPLAT            = "splatRing.png"
+	PM_IMAGE_BUBBLE           = "bubble.png"
 	PM_FIREBALL_LIFE          = 100
 	PM_FIRE_ANIMATE_SPEED     = 7
 	PM_MAX_FIREBALLS          = 10
@@ -123,14 +124,20 @@ func NewProjectileManager(game *Game, kind int) *ProjectileManager {
 }
 
 func (pm *ProjectileManager) initImages() error {
-	// projectile image
-	// 0
+	// projectile images
+
+	// player flamethrower
 	imageDir := path.Join(subdir, PM_IMAGE_FILENAME_0)
 	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
 	imgTemp := copyAndStretchImage(rawImage, PM_BULLET_LENGTH, PM_BULLET_SIZE)
 	pm.projectileImage = append(pm.projectileImage, imgTemp)
-
+	// green bullet
 	imageDir = path.Join(subdir, PM_IMAGE_FILENAME_1)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	imgTemp = copyAndStretchImage(rawImage, PM_BULLET_SIZE, PM_BULLET_SIZE)
+	pm.projectileImage = append(pm.projectileImage, imgTemp)
+	// bubble
+	imageDir = path.Join(subdir, PM_IMAGE_BUBBLE)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	imgTemp = copyAndStretchImage(rawImage, PM_BULLET_SIZE, PM_BULLET_SIZE)
 	pm.projectileImage = append(pm.projectileImage, imgTemp)
@@ -255,6 +262,7 @@ func (pr *Projectile) projectileCollidePlayer(game *Game) bool {
 	game.projectileManager.testRect.y = pr.worldY
 	return collideRect(*game.player.collRect, *game.projectileManager.testRect)
 }
+
 func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 	if &pm.projectileArray == nil {
 		fmt.Println("Array is null")
@@ -275,7 +283,8 @@ func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 			Xoffset := 0
 			Xvel := 0
 			Yvel := 0
-			if kind == 0 {
+			// player projectiles
+			if kind == 0 || kind == 2 {
 				if pm.game.player.faceLeft {
 					Xoffset = 0
 					Xvel = -PM_PROJECTILE_SPEED
@@ -297,7 +306,7 @@ func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 			newProj.velY = Yvel
 			newProj.worldX = startX
 			newProj.worldY = startY
-			if kind != 0 {
+			if kind == 1 {
 				newProj.worldX += PM_ENEMY_BULLET_X_OFFSET
 				newProj.worldY += PM_ENEMY_BULLET_Y_OFFSET
 			}
