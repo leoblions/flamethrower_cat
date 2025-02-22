@@ -64,8 +64,9 @@ type EntityManager struct {
 	filename_base        string
 	frameChangeTickCount int
 	enemyLastFiredBullet int64
+	entAttackRect        *rect
 
-	EntityManagerImageCollections
+	AllEntitySpriteCollections
 }
 
 type Entity struct {
@@ -79,11 +80,12 @@ type Entity struct {
 	frame             int
 	state             int
 
-	direction rune
-	alive     bool
-	onScreen  bool
-	isEnemy   bool
-	canShoot  bool
+	direction     rune
+	prevDirection rune
+	alive         bool
+	onScreen      bool
+	isEnemy       bool
+	canShoot      bool
 
 	MobileObject
 }
@@ -136,6 +138,7 @@ func NewEntityManager(game *Game) *EntityManager {
 	fm.testRect = &rect{0, 0, EN_SPRITE_W, EN_SPRITE_H}
 	fm.assetID = 0
 	fm.loadDataFromFile()
+	fm.entAttackRect = &rect{}
 	fm.enemyLastFiredBullet = time.Now().UnixNano()
 	fm.testRect = &rect{}
 
@@ -209,22 +212,48 @@ func (em *EntityManager) entitiesShootAtPlayer() {
 }
 
 func (entity *Entity) entityFollowPlayer(game *Game) {
-	//fmt.Println("entity folow player")
 	pposX := game.player.worldX
-	//pposY := game.player.worldY
-
-	//fmt.Println("EM ", entity.worldX+EN_STOP_FOLLOW_DIST)
 
 	if entity.worldX+EN_STOP_FOLLOW_DIST < pposX {
 		entity.velX = EN_ENEMY_SPEED_1
-		entity.direction = 'l'
+
 	} else if entity.worldX-EN_STOP_FOLLOW_DIST > pposX {
 		entity.velX = -EN_ENEMY_SPEED_1
-		entity.direction = 'r'
 
 	} else {
 		entity.velX = 0
+	}
+
+	if entity.worldX < pposX {
+		entity.direction = 'l'
+	} else if entity.worldX > pposX {
+		entity.direction = 'r'
+
+	} else {
 		entity.direction = 'f'
+	}
+
+}
+
+func (entity *Entity) entityMeleePlayer(game *Game) {
+	if !entity.isEnemy {
+		return
+	}
+
+	game.entityManager.entAttackRect = &rect{
+		entity.worldX - EN_STOP_FOLLOW_DIST,
+		entity.worldY - EN_STOP_FOLLOW_DIST,
+		entity.width + EN_STOP_FOLLOW_DIST,
+		entity.height + EN_STOP_FOLLOW_DIST}
+
+	playerInAttackRange := collideRect(*game.entityManager.entAttackRect, game.player.getColliderRect())
+
+	if playerInAttackRange {
+		entity.state = 1
+		//fmt.Println("enemy melee	")
+
+	} else {
+		entity.state = 0
 	}
 
 }
@@ -264,6 +293,7 @@ func (em *EntityManager) entityMotion() {
 	for _, entity := range em.entityList {
 		if entity.health > 0 {
 			entity.entityFollowPlayer(em.game)
+			entity.entityMeleePlayer(em.game)
 		}
 
 		//fmt.Println("EM ", entity.entityDetectPlatformEdge(em.game))
@@ -288,6 +318,8 @@ func (em *EntityManager) entityMotion() {
 		// update position
 		entity.worldX += entity.velX
 		entity.worldY += entity.velY
+
+		entity.prevDirection = entity.direction
 
 	}
 

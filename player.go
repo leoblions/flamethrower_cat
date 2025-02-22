@@ -22,6 +22,7 @@ const (
 	PL_SPRITE_H           = 100
 	xMax                  = screenWidth - playerWidth
 	PL_JUMP_HEIGHT        = 20
+	PL_JUMP_HEIGHT_W      = 1
 	PL_GRAVITY_AMOUNT     = 1.0
 	PL_GRAVITY_AMOUNT_W   = 0.5
 	PL_RUN_BOOST          = 5
@@ -31,6 +32,8 @@ const (
 	PL_HALF_W             = 50
 	PL_HITBOX_H           = 60
 	PL_LAVA_DAMAGE_AMOUNT = 1
+	PL_FRICTION_X         = 1.0
+	PL_FRICTION_X_W       = 1.3
 )
 
 type Player struct {
@@ -178,6 +181,18 @@ func (p *Player) selectImage() {
 
 func (p *Player) playerMotion() {
 	dflags := p.game.input.dflags
+	// underwater physics
+	var gravityAmount, friction, jumpHeight float32
+	if p.isUnderwater {
+		gravityAmount = PL_GRAVITY_AMOUNT_W
+		friction = PL_FRICTION_X_W
+		jumpHeight = PL_JUMP_HEIGHT_W
+		//fmt.Println("UW FALL")
+	} else {
+		gravityAmount = PL_GRAVITY_AMOUNT
+		friction = PL_FRICTION_X
+		jumpHeight = PL_JUMP_HEIGHT
+	}
 
 	solidBelowPlayer := p.game.tileMap.solidUnderPlayer(0)
 	var jump bool = false
@@ -188,7 +203,7 @@ func (p *Player) playerMotion() {
 	}
 	//playerFootHeight := p.worldX + playerHeight
 
-	if dflags.up && !dflags.down && (solidBelowPlayer || plat || p.hoverMode) {
+	if dflags.up && !dflags.down && (solidBelowPlayer || plat || p.hoverMode || p.isUnderwater) {
 		jump = true
 		// jumps can work
 		if p.hoverMode {
@@ -201,7 +216,7 @@ func (p *Player) playerMotion() {
 		}
 
 	} else if p.hoverMode {
-		p.velY = attenuate(p.velY, 1.0)
+		p.velY = attenuate(p.velY, friction)
 		//plat = false
 	} else if plat && !dflags.up && !dflags.down {
 		p.velY = float32(p.game.platformManager.touchingPlatformVelY)
@@ -224,7 +239,7 @@ func (p *Player) playerMotion() {
 			p.velX += PL_RUN_BOOST
 		}
 	} else if !plat {
-		p.velX = attenuate(p.velX, 1.0)
+		p.velX = attenuate(p.velX, friction)
 	}
 	p.run = false
 	testRect := rect{p.worldX + int(p.velX), p.worldY + int(p.velY), playerWidth, playerHeight}
@@ -234,14 +249,18 @@ func (p *Player) playerMotion() {
 
 	if !p.hoverMode && !plat {
 		//fall
-		p.velY += PL_GRAVITY_AMOUNT
+		p.velY += gravityAmount
+
 	}
 
 	if jump && (solidBelowPlayer || plat) && !p.hoverMode {
 		//jump
-		p.velY -= PL_JUMP_HEIGHT
+		p.velY -= jumpHeight
 		p.game.audioPlayer.playSoundByID("jump")
 		//_ = playSound(p.game.audioPlayer.soundEffectPlayers["jump"])
+	} else if jump && p.isUnderwater {
+		p.velY -= jumpHeight
+		//p.game.audioPlayer.playSoundByID("jump")
 	}
 
 	p.velY = clamp(-20.0, 20.0, p.velY)
@@ -302,6 +321,13 @@ func (p *Player) checkPlayerStandingOnLava() bool {
 
 }
 
+func (p *Player) checkPlayerUnderwater() bool {
+	pX := p.worldX + PL_HALF_W
+	pY := p.worldY + PL_HALF_W
+	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_WATER_TILE_ID)
+
+}
+
 func (p *Player) updateState() {
 
 	if p.velX != 0 {
@@ -324,7 +350,10 @@ func (p *Player) Update() {
 		p.changeHealth(-PL_LAVA_DAMAGE_AMOUNT)
 		p.game.audioPlayer.playSoundByID("lavahiss")
 	}
+<<<<<<< HEAD
 
+=======
+>>>>>>> 31e7be2057b01cb08d788d67df58d6bf85ec90ab
 	p.isUnderwater = p.checkPlayerUnderwater()
 }
 
