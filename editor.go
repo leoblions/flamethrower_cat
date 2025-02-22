@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type ED_CLICK_ENUM int
@@ -13,8 +15,18 @@ const (
 	ED_CLICK_RIGHT
 )
 
+const (
+	ED_TEXT_LEFT = 20
+	ED_TEXT_TOP1 = 55
+	ED_TEXT_TOP2 = 70
+)
+
 type Editor struct {
-	game *Game
+	game           *Game
+	drawEditInfo   bool
+	displayAssetID int
+	editString1    *RasterString
+	editString2    *RasterString
 	//assetID int
 }
 
@@ -22,7 +34,19 @@ func NewEditor(game *Game) *Editor {
 	ed := &Editor{}
 	ed.game = game
 	//ed.assetID = 0
+	ed.editString1 = NewRasterString(game, "AssetID ", ED_TEXT_LEFT, ED_TEXT_TOP1)
+	ed.editString2 = NewRasterString(game, "Mode ", ED_TEXT_LEFT, ED_TEXT_TOP2)
 	return ed
+}
+
+func (ed *Editor) setAssetIDText(assetID int) {
+	ed.editString1.stringContent = fmt.Sprintf("AssetID %d", assetID)
+
+}
+
+func (ed *Editor) setModeText(mode string) {
+	ed.editString2.stringContent = fmt.Sprintf("Mode %s", mode)
+
 }
 
 func (ed *Editor) editHandleWheel(wheelY float64) {
@@ -81,6 +105,11 @@ func (ed *Editor) setActiveComponentAssetID(assetID int) {
 		fmt.Println("Editor: Cannot edit nil component, setAssetID")
 	}
 
+}
+
+func (ed *Editor) Draw(screen *ebiten.Image) {
+	ed.editString1.Draw(screen)
+	ed.editString2.Draw(screen)
 }
 
 func (ed *Editor) getActiveEditableComponent() editable {

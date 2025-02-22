@@ -5,6 +5,9 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -12,10 +15,11 @@ import (
 )
 
 const (
-	screenWidth  = 640
-	screenHeight = 480
-	centerTextX  = screenWidth/2 - 50
-	centerTextY  = screenHeight/2 - 50
+	//screenWidth           = 640
+	//screenHeight          = 480
+	GAME_DEFAULT_SCREEN_W = 640
+	GAME_DEFAULT_SCREEN_H = 480
+
 	//tileSize            = 32
 	titleFontSize                           = fontSize * 1.5
 	fontSize                                = 24
@@ -50,6 +54,13 @@ var (
 	timerLastTimeMillis int64
 	lastPauseTime       int64 = 0
 	pauseIntervalMillis int64 = 1000
+	commandLineArgs     []string
+	panelHeight         int
+	panelWidth          int
+	midpointX           int
+	midpointY           int
+	centerTextX         = panelWidth/2 - 50
+	centerTextY         = panelHeight/2 - 50
 )
 
 // create Enum for editing maps mode
@@ -102,6 +113,7 @@ type Game struct {
 	editMode                        EditMode
 	godMode                         bool
 	activateObject                  bool
+	exePath                         string
 	//sound
 
 }
@@ -171,6 +183,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.platformManager.Draw(screen)
 	g.decorManager.Draw(screen)
 	g.healthBar.Draw(screen)
+	g.editor.Draw(screen)
 
 }
 
@@ -206,6 +219,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func NewGame() ebiten.Game {
 	g := &Game{}
 	g.init()
+	g.exePath = commandLineArgs[0]
 	//g.player.init()
 
 	return g
@@ -274,8 +288,8 @@ func (g *Game) init() {
 	startY := PLAYER_START_POS_Y
 	startX := PLAYER_START_POS_X
 	g.activateObject = false
-	g.screenHeight = screenHeight
-	g.screenWidth = screenWidth
+	g.screenHeight = panelHeight
+	g.screenWidth = panelWidth
 	//g.player = &Player{}
 	g.level = GAME_START_LEVEL
 	g.player = NewPlayer(g, startX, startY)
@@ -359,9 +373,29 @@ func (g *Game) loadLevel(level int) {
 
 }
 
+func setResolution() (int, int) {
+	if len(commandLineArgs) >= 4 && strings.TrimSpace(commandLineArgs[1]) == "resolution" {
+		numA, errA := strconv.Atoi(strings.TrimSpace(commandLineArgs[2]))
+		numB, errB := strconv.Atoi(strings.TrimSpace(commandLineArgs[3]))
+		if errA != nil || errB != nil || numA <= 0 || numB <= 0 {
+
+			return GAME_DEFAULT_SCREEN_W, GAME_DEFAULT_SCREEN_H
+		} else {
+			return numA, numB
+		}
+	} else {
+
+		return GAME_DEFAULT_SCREEN_W, GAME_DEFAULT_SCREEN_H
+	}
+}
+
 func main() {
-	ebiten.SetWindowSize(640, 480)
+	commandLineArgs = os.Args
+	panelWidth, panelHeight = setResolution()
+
+	ebiten.SetWindowSize(panelWidth, panelHeight)
 	ebiten.SetWindowTitle("Flamethrower Cat")
+
 	if err := ebiten.RunGame(NewGame()); err != nil {
 		log.Fatal(err)
 	}

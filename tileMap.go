@@ -20,6 +20,7 @@ const (
 	brickImage1                      string  = "groundBrown.png"
 	TM_SPRITESHEET_FILE              string  = "tileCT.png"
 	TM_SPRITESHEET_FILE2             string  = "tilesB.png"
+	TM_SPRITESHEET_FILE3             string  = "tileAlien.png"
 	TM_LAVA_IMAGES                   string  = "decorLava50.png"
 	TM_WATER_IMAGES                  string  = "waterOverlay.png"
 	TM_DEFAULT_MAP_FILENAME          string  = "map0.csv"
@@ -300,6 +301,13 @@ func (tm *TileMap) initTileMapImages() {
 	spriteSheet2 := cutSpriteSheet(spriteSheetImage, TM_SPRITE_SIZE,
 		TM_SPRITE_SIZE, TM_SPRITESHEET_ROWS, TM_SPRITESHEET_ROWS)
 	tm.images = append(tm.images, spriteSheet2...)
+
+	//3rd sheet
+	imageDir = path.Join(subdir, TM_SPRITESHEET_FILE3)
+	spriteSheetImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	spriteSheet3 := cutSpriteSheet(spriteSheetImage, TM_SPRITE_SIZE,
+		TM_SPRITE_SIZE, TM_SPRITESHEET_ROWS, TM_SPRITESHEET_ROWS)
+	tm.images = append(tm.images, spriteSheet3...)
 
 }
 

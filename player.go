@@ -12,15 +12,15 @@ import (
 const (
 	subdir = "images"
 	//paddleImage  = "longPaddle.png"
-	playerImageL          = "ffcatL.png"
-	playerImageR          = "ffcatR.png"
-	PL_SPRITE_SHEET       = "cattoSS.png"
-	defaultSpeed          = 5
-	playerHeight          = 100
-	playerWidth           = 100
-	PL_SPRITE_W           = 100
-	PL_SPRITE_H           = 100
-	xMax                  = screenWidth - playerWidth
+	playerImageL    = "ffcatL.png"
+	playerImageR    = "ffcatR.png"
+	PL_SPRITE_SHEET = "cattoSS.png"
+	defaultSpeed    = 5
+	playerHeight    = 100
+	playerWidth     = 100
+	PL_SPRITE_W     = 100
+	PL_SPRITE_H     = 100
+
 	PL_JUMP_HEIGHT        = 20
 	PL_JUMP_HEIGHT_W      = 1
 	PL_GRAVITY_AMOUNT     = 1.0
@@ -40,6 +40,7 @@ type Player struct {
 	game *Game
 	//worldX           int
 	//worldY           int
+	xMax             int
 	screenX          int
 	screenY          int
 	state            rune // s=stand w=walk f=fall/jump
@@ -85,6 +86,7 @@ func NewPlayer(g *Game, startX, startY int) *Player {
 	p.worldY = startY
 	p.hoverMode = false
 	p.run = false
+	p.xMax = panelWidth - playerWidth
 	p.health = 100
 	p.state = 's'
 	p.currentFrame = 0
@@ -321,7 +323,7 @@ func (p *Player) checkPlayerStandingOnLava() bool {
 
 }
 
-func (p *Player) checkPlayerUnderwater() bool {
+func (p *Player) checkPlayerUnderwater_0() bool {
 	pX := p.worldX + PL_HALF_W
 	pY := p.worldY + PL_HALF_W
 	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_WATER_TILE_ID)
@@ -350,10 +352,7 @@ func (p *Player) Update() {
 		p.changeHealth(-PL_LAVA_DAMAGE_AMOUNT)
 		p.game.audioPlayer.playSoundByID("lavahiss")
 	}
-<<<<<<< HEAD
 
-=======
->>>>>>> 31e7be2057b01cb08d788d67df58d6bf85ec90ab
 	p.isUnderwater = p.checkPlayerUnderwater()
 }
 

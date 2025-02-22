@@ -100,6 +100,22 @@ func NewRasterString(g *Game, content string, startX, startY int) *RasterString 
 
 }
 
+func (p *RasterString) updateText(content string) {
+
+	p.stringContent = content
+
+	var err error
+	imageDir := path.Join(ssimageSubdir, lettersSpritesheetFilename)
+	p.spritesheet, _, err = ebitenutil.NewImageFromFile(imageDir)
+	p.currImage = getSubImage(p.spritesheet, 0, 0, p.letterWidth, p.letterHeight)
+	p.visible = true
+
+	if err != nil {
+		log.Fatal(nil)
+	}
+
+}
+
 func (p *RasterString) Draw(screen *ebiten.Image) {
 	//runeList := []rune(p.stringContent)
 	//DrawImageAt(screen, p.currImage, p.screenX, p.screenY)
