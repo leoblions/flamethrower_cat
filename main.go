@@ -161,6 +161,7 @@ func (g *Game) Update() error {
 		g.entityManager.Update()
 		g.platformManager.Update()
 		g.decorManager.Update()
+		g.editor.Update()
 	}
 
 	return nil
@@ -373,10 +374,28 @@ func (g *Game) loadLevel(level int) {
 
 }
 
+func setCheats() {
+
+}
+
 func setResolution() (int, int) {
-	if len(commandLineArgs) >= 4 && strings.TrimSpace(commandLineArgs[1]) == "resolution" {
-		numA, errA := strconv.Atoi(strings.TrimSpace(commandLineArgs[2]))
-		numB, errB := strconv.Atoi(strings.TrimSpace(commandLineArgs[3]))
+	const flag = "resolution"
+	var foundFlagPos = -1
+	argsLen := len(commandLineArgs)
+	lastIndex := argsLen - 1
+	if argsLen >= 4 {
+
+		for i, _ := range commandLineArgs {
+			if strings.TrimSpace(commandLineArgs[i]) == flag {
+				foundFlagPos = i
+				break
+			}
+		}
+		if lastIndex-2 < foundFlagPos {
+			return GAME_DEFAULT_SCREEN_W, GAME_DEFAULT_SCREEN_H
+		}
+		numA, errA := strconv.Atoi(strings.TrimSpace(commandLineArgs[foundFlagPos+1]))
+		numB, errB := strconv.Atoi(strings.TrimSpace(commandLineArgs[foundFlagPos+2]))
 		if errA != nil || errB != nil || numA <= 0 || numB <= 0 {
 
 			return GAME_DEFAULT_SCREEN_W, GAME_DEFAULT_SCREEN_H

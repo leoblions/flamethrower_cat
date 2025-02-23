@@ -86,7 +86,7 @@ func (inp *Input) Update() {
 	}
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 
-		if mouseButtonpressedBefore.middle {
+		if mouseButtonpressedBefore.right {
 			inp.game.editor.editHandleClick(ED_CLICK_RIGHT, mx, my)
 			mouseButtonpressedBefore.right = false
 
