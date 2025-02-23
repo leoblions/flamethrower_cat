@@ -82,7 +82,7 @@ type PlatformManager struct {
 
 	defImage                 *ebiten.Image
 	images                   []*ebiten.Image
-	testRect                 rect
+	platTestRect             *rect
 	filename_base            string
 	assetID                  int
 	playerStandingOnPlatform bool
@@ -105,8 +105,11 @@ func NewPlatformManager(game *Game) *PlatformManager {
 	pfm.assetID = 0
 	//pfm.AddInstanceToGrid(3, 3, 0)
 	pfm.modifiedRect = &rect{}
+	pfm.platTestRect = &rect{}
 	pfm.modifiedRect.height = PF_MOD_RECT_H
-	pfm.modifiedRect.width = playerWidth
+	pfm.modifiedRect.width = PL_COLLRECT_W
+	pfm.platTestRect.height = PF_DEFAULT_HEIGHT
+	pfm.platTestRect.width = PF_DEFAULT_WIDTH
 	pfm.loadDataFromFile()
 	return pfm
 
@@ -199,21 +202,22 @@ func (pfm *PlatformManager) platformMotion() {
 
 }
 
-func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
+func (pfm *PlatformManager) checkPlatformTouchedPlayer_0() {
 
 	playerRect := pfm.game.player.getWorldColliderRect()
 	rectTop := playerRect.y + (playerRect.height - PF_TOUCH_PLAYER_FOOT_WINDOW)
 	pfm.modifiedRect.x = playerRect.x
+	//pfm.modifiedRect.y = playerRect.y
 	pfm.modifiedRect.y = rectTop
 	pfm.playerStandingOnPlatform = false
 	for _, v := range pfm.platformsArray {
 		if nil != v {
-			pfm.testRect.height = v.height
-			pfm.testRect.width = v.width
-			pfm.testRect.x = v.currX
-			pfm.testRect.y = v.currY
+			pfm.platTestRect.height = v.height
+			pfm.platTestRect.width = v.width
+			pfm.platTestRect.x = v.currX
+			pfm.platTestRect.y = v.currY
 
-			if collideRect(*pfm.modifiedRect, pfm.testRect) {
+			if collideRect(*pfm.modifiedRect, *pfm.platTestRect) {
 				//fmt.Println("player touched platform")
 				pfm.playerStandingOnPlatform = true
 				pfm.touchingPlatformVelX = v.velX
@@ -224,6 +228,55 @@ func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
 			}
 		}
 	}
+}
+
+func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
+
+	playerRect := pfm.game.player.getWorldColliderRect()
+	//rectTop := playerRect.y + (playerRect.height - PF_TOUCH_PLAYER_FOOT_WINDOW)
+	pointT := Point{playerRect.x + playerRect.width/2, playerRect.y + playerRect.height}
+	pointB := Point{playerRect.x + playerRect.width/2, playerRect.y + playerRect.height + 5}
+	//pfm.modifiedRect.x = playerRect.x
+	//pfm.modifiedRect.y = playerRect.y
+	//pfm.modifiedRect.y = rectTop
+	pfm.playerStandingOnPlatform = false
+	for _, v := range pfm.platformsArray {
+		if nil != v {
+			pfm.platTestRect.height = v.height
+			pfm.platTestRect.width = v.width
+			pfm.platTestRect.x = v.currX
+			pfm.platTestRect.y = v.currY
+
+			if pointT.intersectsWithRect(pfm.platTestRect) ||
+				pointB.intersectsWithRect(pfm.platTestRect) {
+				pfm.playerStandingOnPlatform = true
+				pfm.touchingPlatformVelX = v.velX
+				pfm.touchingPlatformVelY = v.velY
+				//fmt.Println("intersects platform ", v.currX)
+				return
+			}
+
+		}
+	}
+}
+
+func (pfm *PlatformManager) pointCollidesWithPlatform(px, py int) bool {
+	point := &Point{px, py}
+	for _, v := range pfm.platformsArray {
+		if nil != v {
+			pfm.platTestRect.height = v.height
+			pfm.platTestRect.width = v.width
+			pfm.platTestRect.x = v.currX
+			pfm.platTestRect.y = v.currY
+
+			if point.intersectsWithRect(pfm.platTestRect) {
+
+				return true
+			}
+
+		}
+	}
+	return false
 }
 
 func (pfm *PlatformManager) saveDataToFile() {

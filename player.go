@@ -16,21 +16,24 @@ const (
 	playerImageR    = "ffcatR.png"
 	PL_SPRITE_SHEET = "cattoSS.png"
 	defaultSpeed    = 5
-	playerHeight    = 100
-	playerWidth     = 100
-	PL_SPRITE_W     = 100
-	PL_SPRITE_H     = 100
+	//playerHeight         = 100
+	//playerWidth          = 100
+	PL_SPRITE_W          = 100
+	PL_SPRITE_H          = 100
+	PL_COLLRECT_W        = 50
+	PL_COLLRECT_H        = 100
+	PL_COLLRECT_OFFSET_X = 25
 
-	PL_JUMP_HEIGHT                = 20
-	PL_JUMP_HEIGHT_W              = 1
-	PL_GRAVITY_AMOUNT             = 1.0
-	PL_GRAVITY_AMOUNT_W           = 0.2
-	PL_RUN_BOOST                  = 5
-	PL_FRAME_CHANGE_TICKS         = 20
-	PL_HEALTH_MAX                 = 100
-	PL_HITBOX_W                   = 50
-	PL_HALF_W                     = 50
-	PL_HITBOX_H                   = 60
+	PL_JUMP_HEIGHT        = 20
+	PL_JUMP_HEIGHT_W      = 1
+	PL_GRAVITY_AMOUNT     = 1.0
+	PL_GRAVITY_AMOUNT_W   = 0.2
+	PL_RUN_BOOST          = 5
+	PL_FRAME_CHANGE_TICKS = 20
+	PL_HEALTH_MAX         = 100
+	//PL_HITBOX_W                   = 50
+	PL_HALF_W = 50
+	//PL_HITBOX_H                   = 100
 	PL_LAVA_DAMAGE_AMOUNT         = 1
 	PL_FRICTION_X                 = 1.0
 	PL_FRICTION_X_W               = 1.0
@@ -43,44 +46,49 @@ type Player struct {
 	game *Game
 	//worldX           int
 	//worldY           int
-	xMax             int
-	screenX          int
-	screenY          int
-	state            rune // s=stand w=walk f=fall/jump
-	currentFrame     int
-	currentTickCount int
-	health           int
-	velX             float32
-	velY             float32
-	currImage        *ebiten.Image
-	imageL           *ebiten.Image
-	imageR           *ebiten.Image
-	imageWalkL       []*ebiten.Image
-	imageWalkR       []*ebiten.Image
-	imageFallL       *ebiten.Image
-	imageFallR       *ebiten.Image
-	frozen           bool
-	hoverMode        bool
-	faceLeft         bool
-	run              bool
-	footUnderwater   bool
-	headUnderwater   bool
-	treadingWater    bool
-	touchingLadder   bool
+	xMax               int
+	screenX            int
+	screenY            int
+	state              rune // s=stand w=walk f=fall/jump
+	currentFrame       int
+	currentTickCount   int
+	health             int
+	velX               float32
+	velY               float32
+	currImage          *ebiten.Image
+	imageL             *ebiten.Image
+	imageR             *ebiten.Image
+	imageWalkL         []*ebiten.Image
+	imageWalkR         []*ebiten.Image
+	imageFallL         *ebiten.Image
+	imageFallR         *ebiten.Image
+	frozen             bool
+	hoverMode          bool
+	faceLeft           bool
+	run                bool
+	footUnderwater     bool
+	headUnderwater     bool
+	treadingWater      bool
+	touchingLadder     bool
+	standingOnPlatform bool
 
-	collRect *rect
+	collRect     *rect
+	collRectTile *rect
+	testRect     *rect
 	MobileObject
 }
 
 func (p *Player) getWorldColliderRect() rect {
-	return rect{p.worldX, p.worldY, playerWidth, playerHeight}
+	//return rect{p.worldX, p.worldY, PL_COLLRECT_W, PL_COLLRECT_H}
+	//p.updateCollrect()
+	return *p.collRect
 }
-func (p *Player) getColliderRect() rect {
-	return rect{p.screenX, p.screenY, playerWidth, playerHeight}
+func (p *Player) getScreenCollrect() rect {
+	return rect{p.screenX, p.screenY, PL_COLLRECT_W, PL_COLLRECT_H}
 }
 
 func (p *Player) midpointX() int {
-	return p.screenX + (playerWidth / 2)
+	return p.screenX + (PL_COLLRECT_W / 2)
 
 }
 
@@ -92,13 +100,16 @@ func NewPlayer(g *Game, startX, startY int) *Player {
 	p.worldY = startY
 	p.hoverMode = false
 	p.run = false
-	p.xMax = panelWidth - playerWidth
+	p.xMax = panelWidth - PL_COLLRECT_W
 	p.health = 100
 	p.state = 's'
 	p.currentFrame = 0
-	p.width = playerWidth
-	p.height = playerHeight
+	p.width = PL_COLLRECT_W
+	p.height = PL_COLLRECT_H
+	p.testRect = &rect{p.worldX, p.worldY, PL_COLLRECT_W, PL_COLLRECT_H}
 	p.collRect = &rect{p.worldX, p.worldY, p.width, p.height}
+	p.collRectTile = &rect{p.worldX + PL_COLLRECT_OFFSET_X,
+		p.worldY, PL_COLLRECT_W, PL_COLLRECT_H}
 	//p.velX = 2
 	return p
 }
@@ -111,11 +122,11 @@ func (pl *Player) initImages() error {
 
 	imageDir := path.Join(subdir, playerImageL)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	pl.imageL = copyAndStretchImage(rawImage, playerWidth, playerHeight)
+	pl.imageL = copyAndStretchImage(rawImage, PL_SPRITE_W, PL_SPRITE_H)
 
 	imageDir = path.Join(subdir, playerImageR)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	pl.imageR = copyAndStretchImage(rawImage, playerWidth, playerHeight)
+	pl.imageR = copyAndStretchImage(rawImage, PL_SPRITE_W, PL_SPRITE_H)
 
 	if err != nil {
 		log.Fatal(err)
@@ -236,14 +247,14 @@ func (p *Player) playerMotion() {
 	gravityAmount, friction, jumpHeight := p.motionWaterPhysics()
 	p.treadingWater = !p.headUnderwater && p.footUnderwater
 	solidBelowPlayer := p.game.tileMap.solidUnderPlayer(0)
-	plat := p.game.platformManager.playerStandingOnPlatform
-	canJump := (solidBelowPlayer || plat || p.hoverMode || p.footUnderwater || p.treadingWater)
+	p.standingOnPlatform = p.game.platformManager.playerStandingOnPlatform
+	canJump := (solidBelowPlayer || p.standingOnPlatform || p.hoverMode || p.footUnderwater || p.treadingWater)
 	//fmt.Printf("can jump %t \n", canJump)
 
 	var jump bool = false
 
-	if plat {
-		//fmt.Println("platform force up")
+	if p.standingOnPlatform {
+		//fmt.Println("p.standingOnPlatformform force up")
 	}
 	//playerFootHeight := p.worldX + playerHeight
 
@@ -257,9 +268,9 @@ func (p *Player) playerMotion() {
 		}
 
 	} else if !dflags.up && dflags.down {
-		if p.hoverMode || plat || p.footUnderwater || p.touchingLadder {
+		if p.hoverMode || p.standingOnPlatform || p.footUnderwater || p.touchingLadder {
 			p.velY += defaultSpeed
-			//plat = false //press down to fall thru platform
+			//p.standingOnPlatform = false //press down to fall thru p.standingOnPlatformform
 		}
 
 	} else if !dflags.down && !dflags.up && (p.treadingWater) && !p.touchingLadder {
@@ -267,8 +278,8 @@ func (p *Player) playerMotion() {
 		p.velY = 0
 	} else if p.hoverMode || p.touchingLadder {
 		p.velY = attenuate(p.velY, friction)
-		//plat = false
-	} else if plat && !dflags.up && !dflags.down {
+		//p.standingOnPlatform = false
+	} else if p.standingOnPlatform && !dflags.up && !dflags.down {
 		p.velY = float32(p.game.platformManager.touchingPlatformVelY)
 		p.velX = float32(p.game.platformManager.touchingPlatformVelX)
 		if p.velY > 0 {
@@ -288,16 +299,18 @@ func (p *Player) playerMotion() {
 		if p.run {
 			p.velX += PL_RUN_BOOST
 		}
-	} else if !plat {
+	} else if !p.standingOnPlatform {
 		p.velX = attenuate(p.velX, friction)
 	}
 	p.run = false
-	testRect := rect{p.worldX + int(p.velX), p.worldY + int(p.velY), playerWidth, playerHeight}
-	sideCollisions := p.game.tileMap.getSideCollisionData(testRect)
+
+	p.updateTestRect(p.velX, p.velY)
+
+	sideCollisions := p.game.tileMap.getSideCollisionData(*p.testRect)
 
 	dflags.reset()
 
-	if !p.hoverMode && !plat && !p.treadingWater && !p.touchingLadder {
+	if !p.hoverMode && !p.standingOnPlatform && !p.treadingWater && !p.touchingLadder {
 		// fall gravity
 
 		p.velY += gravityAmount
@@ -347,18 +360,30 @@ func (p *Player) playerMotion() {
 		}
 
 	}
+	// cleanup
 	p.screenX = p.worldX - worldOffsetX
 	p.screenY = p.worldY - worldOffsetY
 	p.updateCollrect()
 	p.touchingLadder = false
+	//p.standingOnPlatform = false
+
+}
+
+func (p *Player) updateTestRect(velX, velY float32) {
+	p.testRect.x = p.worldX + int(p.velX) + PL_COLLRECT_OFFSET_X
+	p.testRect.y = p.worldY + int(p.velY)
+	p.testRect.width = PL_COLLRECT_W
+	p.testRect.height = PL_COLLRECT_H
 
 }
 
 func (p *Player) updateCollrect() {
 	p.collRect.x = p.worldX + 30
-	p.collRect.width = PL_HITBOX_W
-	p.collRect.height = PL_HITBOX_H
+	p.collRect.width = PL_COLLRECT_W
+	p.collRect.height = PL_COLLRECT_H
 	p.collRect.y = p.worldY
+	p.collRectTile.x = p.worldX + PL_COLLRECT_OFFSET_X
+	p.collRectTile.y = p.worldY
 
 }
 
@@ -391,15 +416,21 @@ func (p *Player) checkHeadUnderWater() bool {
 }
 
 func (p *Player) updateState() {
-
-	if p.velX != 0 {
-		p.state = 'w'
-	} else {
+	footX := p.collRect.x + 50
+	footY := p.collRect.y + 120
+	if p.game.platformManager.pointCollidesWithPlatform(footX, footY) {
 		p.state = 's'
+	} else {
+		if p.velX != 0 {
+			p.state = 'w'
+		} else {
+			p.state = 's'
+		}
+		if p.velY != 0 {
+			p.state = 'f'
+		}
 	}
-	if p.velY != 0 {
-		p.state = 'f'
-	}
+
 }
 
 func (p *Player) Update() {

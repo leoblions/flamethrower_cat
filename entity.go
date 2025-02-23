@@ -246,7 +246,7 @@ func (entity *Entity) entityMeleePlayer(game *Game) {
 		entity.width + EN_STOP_FOLLOW_DIST,
 		entity.height + EN_STOP_FOLLOW_DIST}
 
-	playerInAttackRange := collideRect(*game.entityManager.entAttackRect, game.player.getColliderRect())
+	playerInAttackRange := collideRect(*game.entityManager.entAttackRect, game.player.getScreenCollrect())
 
 	if playerInAttackRange {
 		entity.state = 1

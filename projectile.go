@@ -11,28 +11,29 @@ import (
 )
 
 const (
-	PM_MAX_PROJECTILES        = 10
-	PM_IMAGE_FILENAME_0       = "bullet.png"
-	PM_IMAGE_FILENAME_1       = "greenBullet.png"
-	PM_BULLET_SIZE            = 20
-	PM_BULLET_LENGTH          = 50
-	PM_PROJECTILE_SPEED       = 11
-	PM_DELAY_TICKS            = 15
-	PM_IMAGE_FIREBALL         = "fireball.png"
-	PM_IMAGE_SPLAT            = "splatRing.png"
-	PM_IMAGE_BUBBLE           = "bubble.png"
-	PM_FIREBALL_LIFE          = 100
-	PM_FIRE_ANIMATE_SPEED     = 7
-	PM_MAX_FIREBALLS          = 10
-	PM_COMPONENT_VECTOR_MAX   = 10
-	PM_DEBOUNCE_INTERVAL      = 120000000
-	PM_DEF_DAMAGE_AMOUNT      = 33
-	PM_BULLET_PLAYER_X_OFFSET = 25
-	PM_FIREBALL_X_OFFSET      = -25
-	PM_ENEMY_BULLET_SPEED     = 3.5
-	PM_ENEMY_BULLET_X_OFFSET  = 50
-	PM_ENEMY_BULLET_Y_OFFSET  = 50
-	PM_DAMEAGE_PLAYER         = 1
+	PM_MAX_PROJECTILES         = 10
+	PM_IMAGE_FILENAME_0        = "bullet.png"
+	PM_IMAGE_FILENAME_1        = "greenBullet.png"
+	PM_BULLET_SIZE             = 20
+	PM_BULLET_LENGTH           = 50
+	PM_PROJECTILE_SPEED        = 11
+	PM_DELAY_TICKS             = 15
+	PM_IMAGE_FIREBALL          = "fireball.png"
+	PM_IMAGE_SPLAT             = "splatRing.png"
+	PM_IMAGE_BUBBLE            = "bubble.png"
+	PM_FIREBALL_LIFE           = 100
+	PM_FIRE_ANIMATE_SPEED      = 7
+	PM_MAX_FIREBALLS           = 10
+	PM_COMPONENT_VECTOR_MAX    = 10
+	PM_DEBOUNCE_INTERVAL       = 120000000
+	PM_DEF_DAMAGE_AMOUNT       = 33
+	PM_BULLET_PLAYER_X_OFFSET  = 25
+	PM_FIREBALL_X_OFFSET       = -25
+	PM_ENEMY_BULLET_SPEED      = 3.5
+	PM_ENEMY_BULLET_X_OFFSET   = 50
+	PM_ENEMY_BULLET_Y_OFFSET   = 50
+	PM_DAMEAGE_PLAYER          = 1
+	PM_OFFSCREEN_CULL_DISTANCE = 200
 )
 
 type ProjectileManager struct {
@@ -220,9 +221,11 @@ func (pm *ProjectileManager) Update() {
 			v.worldY += v.velY
 			screenX := v.worldX - worldOffsetX
 			screenY := v.worldY - worldOffsetY
-
-			if v.kind == 0 && (screenY < 0 || screenY > pm.game.screenHeight ||
-				screenX < 0 || screenX > pm.game.screenWidth) {
+			// culling
+			if screenY < 0-PM_OFFSCREEN_CULL_DISTANCE ||
+				screenY > pm.game.screenHeight+PM_OFFSCREEN_CULL_DISTANCE ||
+				screenX < 0-PM_OFFSCREEN_CULL_DISTANCE ||
+				screenX > pm.game.screenWidth+PM_OFFSCREEN_CULL_DISTANCE {
 				v.alive = false
 				continue
 				// projectile went off screen
@@ -289,7 +292,7 @@ func (pm *ProjectileManager) AddProjectile(startX, startY, kind int) {
 					Xoffset = 0
 					Xvel = -PM_PROJECTILE_SPEED
 				} else {
-					Xoffset += playerWidth
+					Xoffset += PL_COLLRECT_W
 					Xvel = PM_PROJECTILE_SPEED
 				}
 
@@ -365,11 +368,11 @@ func (pm *ProjectileManager) AddProjectile_0() {
 				Xoffset = 0
 				Xvel = -PM_PROJECTILE_SPEED
 			} else {
-				Xoffset += playerWidth
+				Xoffset += PL_COLLRECT_W
 				Xvel = PM_PROJECTILE_SPEED
 			}
 			startX := pm.game.player.worldX + Xoffset
-			startY := pm.game.player.worldY + (playerHeight / 2)
+			startY := pm.game.player.worldY + (PL_COLLRECT_H / 2)
 			newProj := &Projectile{}
 			newProj.velX = Xvel
 			newProj.velY = 0

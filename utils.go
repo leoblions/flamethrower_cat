@@ -417,3 +417,17 @@ func attenuate(principal, amountToDecrease float32) float32 {
 		return 0.0
 	}
 }
+
+type Point struct {
+	x int
+	y int
+}
+
+func (p Point) intersectsWithRect(rect1 *rect) bool {
+	x2 := rect1.x + rect1.width
+	y2 := rect1.y + rect1.height
+	return (p.x >= rect1.x &&
+		p.y >= rect1.y &&
+		p.x <= x2 &&
+		p.y <= y2)
+}

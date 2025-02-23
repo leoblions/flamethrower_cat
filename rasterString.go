@@ -61,11 +61,11 @@ type characterRecord struct {
 }
 
 func (p *RasterString) getColliderRect() rect {
-	return rect{p.screenX, p.screenY, playerWidth, playerHeight}
+	return rect{p.screenX, p.screenY, PL_COLLRECT_W, PL_COLLRECT_H}
 }
 
 func (p *RasterString) midpointX() int {
-	return p.screenX + (playerWidth / 2)
+	return p.screenX + (PL_COLLRECT_W / 2)
 
 }
 

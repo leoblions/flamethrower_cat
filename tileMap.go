@@ -232,7 +232,7 @@ func (tm *TileMap) pointCollidedWithGivenTileKind(worldX, worldY, kind int) bool
 func (tm *TileMap) solidUnderPlayer(distbelowFeet int) bool {
 	//true if solid tile
 	prect := tm.game.player.getWorldColliderRect()
-	solid := tm.pointCollidedWithSolidTile(prect.x+(prect.width/2), prect.y+prect.height+distbelowFeet)
+	solid := tm.pointCollidedWithSolidTile(prect.x+25, prect.y+prect.height+distbelowFeet)
 	//fmt.Println(solid)
 	return solid
 
@@ -400,7 +400,7 @@ func (tm *TileMap) Update() {
 }
 
 func (tm *TileMap) shiftViewportToFollowPlayer() {
-	plr := tm.game.player.getColliderRect() //player screen loc
+	plr := tm.game.player.getScreenCollrect() //player screen loc
 	x2 := plr.x + plr.width
 	y2 := plr.y + plr.height
 	//shiftAmount := defaultSpeed
