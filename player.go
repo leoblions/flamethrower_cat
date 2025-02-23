@@ -21,19 +21,21 @@ const (
 	PL_SPRITE_W     = 100
 	PL_SPRITE_H     = 100
 
-	PL_JUMP_HEIGHT        = 20
-	PL_JUMP_HEIGHT_W      = 1
-	PL_GRAVITY_AMOUNT     = 1.0
-	PL_GRAVITY_AMOUNT_W   = 0.5
-	PL_RUN_BOOST          = 5
-	PL_FRAME_CHANGE_TICKS = 20
-	PL_HEALTH_MAX         = 100
-	PL_HITBOX_W           = 50
-	PL_HALF_W             = 50
-	PL_HITBOX_H           = 60
-	PL_LAVA_DAMAGE_AMOUNT = 1
-	PL_FRICTION_X         = 1.0
-	PL_FRICTION_X_W       = 1.3
+	PL_JUMP_HEIGHT                = 20
+	PL_JUMP_HEIGHT_W              = 1
+	PL_GRAVITY_AMOUNT             = 1.0
+	PL_GRAVITY_AMOUNT_W           = 0.2
+	PL_RUN_BOOST                  = 5
+	PL_FRAME_CHANGE_TICKS         = 20
+	PL_HEALTH_MAX                 = 100
+	PL_HITBOX_W                   = 50
+	PL_HALF_W                     = 50
+	PL_HITBOX_H                   = 60
+	PL_LAVA_DAMAGE_AMOUNT         = 1
+	PL_FRICTION_X                 = 1.0
+	PL_FRICTION_X_W               = 1.0
+	PL_MAX_VEL            float32 = 20.0
+	PL_MAX_VEL_W          float32 = 2.0
 )
 
 type Player struct {
@@ -60,7 +62,10 @@ type Player struct {
 	hoverMode        bool
 	faceLeft         bool
 	run              bool
-	isUnderwater     bool
+	footUnderwater   bool
+	headUnderwater   bool
+	treadingWater    bool
+	touchingLadder   bool
 
 	collRect *rect
 	MobileObject
@@ -181,43 +186,80 @@ func (p *Player) selectImage() {
 
 }
 
-func (p *Player) playerMotion() {
-	dflags := p.game.input.dflags
-	// underwater physics
+func (p *Player) motionWaterPhysics() (float32, float32, float32) {
 	var gravityAmount, friction, jumpHeight float32
-	if p.isUnderwater {
+	if p.footUnderwater && p.headUnderwater {
 		gravityAmount = PL_GRAVITY_AMOUNT_W
 		friction = PL_FRICTION_X_W
 		jumpHeight = PL_JUMP_HEIGHT_W
 		//fmt.Println("UW FALL")
+	} else if p.footUnderwater && !p.headUnderwater {
+		gravityAmount = 0
+		friction = PL_FRICTION_X
+		jumpHeight = PL_JUMP_HEIGHT
 	} else {
 		gravityAmount = PL_GRAVITY_AMOUNT
 		friction = PL_FRICTION_X
 		jumpHeight = PL_JUMP_HEIGHT
 	}
+	return gravityAmount, friction, jumpHeight
+}
 
+func (p *Player) motionTileCollision() {
+
+}
+
+func (p *Player) motionSpeedLimit() {
+	if p.footUnderwater && !p.treadingWater {
+		p.velY = clamp(-PL_MAX_VEL_W, PL_MAX_VEL_W, p.velY)
+		p.velX = clamp(-PL_MAX_VEL_W, PL_MAX_VEL_W, p.velX)
+	} else if p.touchingLadder {
+		p.velY = clamp(-5, 5, p.velY)
+		p.velX = clamp(-PL_MAX_VEL, PL_MAX_VEL, p.velX)
+	} else {
+		p.velY = clamp(-PL_MAX_VEL, PL_MAX_VEL, p.velY)
+		p.velX = clamp(-PL_MAX_VEL, PL_MAX_VEL, p.velX)
+	}
+
+}
+
+func (p *Player) playerMotion() {
+	dflags := p.game.input.dflags
+	// underwater physics
+	p.headUnderwater = p.checkHeadUnderWater()
+	//fmt.Printf("underwater head%t foot%t \n", headUnderWater, p.footUnderwater)
+	gravityAmount, friction, jumpHeight := p.motionWaterPhysics()
+	p.treadingWater = !p.headUnderwater && p.footUnderwater
 	solidBelowPlayer := p.game.tileMap.solidUnderPlayer(0)
-	var jump bool = false
 	plat := p.game.platformManager.playerStandingOnPlatform
+	canJump := (solidBelowPlayer || plat || p.hoverMode || p.footUnderwater || p.treadingWater)
+
+	var jump bool = false
 
 	if plat {
 		//fmt.Println("platform force up")
 	}
 	//playerFootHeight := p.worldX + playerHeight
 
-	if dflags.up && !dflags.down && (solidBelowPlayer || plat || p.hoverMode || p.isUnderwater) {
-		jump = true
-		// jumps can work
-		if p.hoverMode {
+	if dflags.up && !dflags.down {
+		// jump or float up
+		if canJump {
+			jump = true
+		} else if p.touchingLadder || p.hoverMode {
 			p.velY -= defaultSpeed
+
 		}
+
 	} else if !dflags.up && dflags.down {
-		if p.hoverMode || plat {
+		if p.hoverMode || plat || p.footUnderwater || p.touchingLadder {
 			p.velY += defaultSpeed
 			//plat = false //press down to fall thru platform
 		}
 
-	} else if p.hoverMode {
+	} else if !dflags.down && !dflags.up && (p.treadingWater) && !p.touchingLadder {
+		// don't sink if treading water
+		p.velY = 0
+	} else if p.hoverMode || p.touchingLadder {
 		p.velY = attenuate(p.velY, friction)
 		//plat = false
 	} else if plat && !dflags.up && !dflags.down {
@@ -249,23 +291,25 @@ func (p *Player) playerMotion() {
 
 	dflags.reset()
 
-	if !p.hoverMode && !plat {
-		//fall
+	if !p.hoverMode && !plat && !p.treadingWater && !p.touchingLadder {
+		// fall gravity
+
 		p.velY += gravityAmount
 
+	} else {
 	}
 
-	if jump && (solidBelowPlayer || plat) && !p.hoverMode {
+	if jump && !p.hoverMode {
 		//jump
 		p.velY -= jumpHeight
 		p.game.audioPlayer.playSoundByID("jump")
 		//_ = playSound(p.game.audioPlayer.soundEffectPlayers["jump"])
-	} else if jump && p.isUnderwater {
+	} else if jump && p.footUnderwater {
 		p.velY -= jumpHeight
 		//p.game.audioPlayer.playSoundByID("jump")
 	}
 
-	p.velY = clamp(-20.0, 20.0, p.velY)
+	p.motionSpeedLimit()
 
 	if !p.frozen {
 		//fmt.Println("move player")
@@ -293,11 +337,12 @@ func (p *Player) playerMotion() {
 			p.faceLeft = false
 
 		}
-		p.screenX = p.worldX - worldOffsetX
-		p.screenY = p.worldY - worldOffsetY
 
 	}
+	p.screenX = p.worldX - worldOffsetX
+	p.screenY = p.worldY - worldOffsetY
 	p.updateCollrect()
+	p.touchingLadder = false
 
 }
 
@@ -311,7 +356,14 @@ func (p *Player) updateCollrect() {
 
 func (p *Player) checkPlayerUnderwater() bool {
 	pX := p.worldX + PL_HALF_W
-	pY := p.worldY + 20
+	pY := p.worldY + 50
+	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_WATER_TILE_ID)
+
+}
+
+func (p *Player) checkFootUnderwater() bool {
+	pX := p.worldX + PL_HALF_W
+	pY := p.worldY + PL_SPRITE_H
 	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_WATER_TILE_ID)
 
 }
@@ -323,9 +375,9 @@ func (p *Player) checkPlayerStandingOnLava() bool {
 
 }
 
-func (p *Player) checkPlayerUnderwater_0() bool {
+func (p *Player) checkHeadUnderWater() bool {
 	pX := p.worldX + PL_HALF_W
-	pY := p.worldY + PL_HALF_W
+	pY := p.worldY
 	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_WATER_TILE_ID)
 
 }
@@ -353,7 +405,7 @@ func (p *Player) Update() {
 		p.game.audioPlayer.playSoundByID("lavahiss")
 	}
 
-	p.isUnderwater = p.checkPlayerUnderwater()
+	p.footUnderwater = p.checkPlayerUnderwater()
 }
 
 func (p *Player) warpPlayerToGridLocation(gridX, gridY int) {

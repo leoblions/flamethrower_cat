@@ -15,10 +15,12 @@ DATA FILES:
  kind,  gridX,  gridY,  uid
 
  KINDS:
- 0 = BDOOR
+ 0 = DOOR
  1 = BARREL
  2 = SPIKES
  3 = TUNNEL
+ 4 = TRAFFIC LIGHT
+ 5 = LADDER
 
 */
 
@@ -29,6 +31,7 @@ const (
 	BARREL_IMAGE                = "barrel1.png"
 	SPIKES_IMAGE                = "spikes.png"
 	TRAFFICLIGHT_IMAGE          = "trafficLight.png"
+	LADDER_IMAGE                = "ladder50x100.png"
 	FM_FILENAME_BASE            = "fidget"
 	FM_FILENAME_END             = ".csv"
 	FM_SPRITE_H                 = 100
@@ -156,6 +159,9 @@ func (pum *FidgetManager) touchFidgetAction(kind, uid int) {
 		fmt.Println("player touched the barrel")
 	case 2:
 		pum.game.player.changeHealth(-1)
+	case 5:
+		pum.game.player.touchingLadder = true
+		//fmt.Println("player touched the barrel")
 
 	}
 
@@ -202,6 +208,11 @@ func (pum *FidgetManager) initImages() error {
 	pum.images = append(pum.images, image)
 	// stoplight
 	imageDir = path.Join(subdir, TRAFFICLIGHT_IMAGE)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	image = getSubImage(rawImage, 0, 0, FM_SPRITE_W_SL, FM_SPRITE_H)
+	pum.trafficLightImages = grabImagesRowToList(rawImage, 100, 0, 4)
+	pum.images = append(pum.images, image)
+	imageDir = path.Join(subdir, LADDER_IMAGE)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	image = getSubImage(rawImage, 0, 0, FM_SPRITE_W_SL, FM_SPRITE_H)
 	pum.trafficLightImages = grabImagesRowToList(rawImage, 100, 0, 4)
