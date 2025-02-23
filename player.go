@@ -198,6 +198,10 @@ func (p *Player) motionWaterPhysics() (float32, float32, float32) {
 		gravityAmount = 0
 		friction = PL_FRICTION_X
 		jumpHeight = PL_JUMP_HEIGHT
+	} else if p.hoverMode {
+		gravityAmount = 0
+		friction = PL_FRICTION_X
+		jumpHeight = PL_JUMP_HEIGHT
 	} else {
 		gravityAmount = PL_GRAVITY_AMOUNT
 		friction = PL_FRICTION_X
@@ -234,6 +238,7 @@ func (p *Player) playerMotion() {
 	solidBelowPlayer := p.game.tileMap.solidUnderPlayer(0)
 	plat := p.game.platformManager.playerStandingOnPlatform
 	canJump := (solidBelowPlayer || plat || p.hoverMode || p.footUnderwater || p.treadingWater)
+	//fmt.Printf("can jump %t \n", canJump)
 
 	var jump bool = false
 
@@ -308,6 +313,8 @@ func (p *Player) playerMotion() {
 	} else if jump && p.footUnderwater {
 		p.velY -= jumpHeight
 		//p.game.audioPlayer.playSoundByID("jump")
+	} else if jump && p.hoverMode {
+		p.velY -= jumpHeight
 	}
 
 	p.motionSpeedLimit()

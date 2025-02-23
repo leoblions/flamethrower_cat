@@ -29,8 +29,8 @@ const (
 	ballInitVelY                            = 4
 	TPS                               int64 = 60
 	msPerTick                         int64 = 1000 / TPS
-	mapRows                                 = 30
-	mapCols                                 = 30
+	GAME_MAP_ROWS                           = 30
+	GAME_MAP_COLS                           = 30
 	GAME_FLIP_LIVES_FROM_POINTS_EVERY       = 100
 	GAME_START_LEVEL                        = 0
 	PLAYER_START_POS_X                      = 250
@@ -139,6 +139,7 @@ type gameComponents struct {
 	decorManager      *DecorManager
 	audioPlayer       *AudioPlayer
 	healthBar         *Bar
+	background        *Background
 }
 
 func (g *Game) Update() error {
@@ -146,6 +147,7 @@ func (g *Game) Update() error {
 	timerNowMillis := now.UnixNano()
 	if abs(timerNowMillis-timerLastTimeMillis) > msPerTick {
 		//g.activateObject = false
+		g.background.Update()
 		g.input.Update()
 		g.player.Update()
 		//g.ball.Update()
@@ -162,6 +164,7 @@ func (g *Game) Update() error {
 		g.platformManager.Update()
 		g.decorManager.Update()
 		g.editor.Update()
+
 	}
 
 	return nil
@@ -172,6 +175,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	//g.ball.Draw(screen)
 	//g.brickGrid.Draw(screen)
+	g.background.Draw(screen)
 	g.tileMap.Draw(screen)
 	g.drawRasterStrings(screen)
 	g.centerMarquee.Draw(screen)
@@ -311,6 +315,7 @@ func (g *Game) init() {
 	g.platformManager = NewPlatformManager(g)
 	g.audioPlayer = NewAudioPlayer(g)
 	g.decorManager = NewDecorManager(g)
+	g.background = NewBackground(g)
 	g.healthBar = NewBar(GAME_HBAR_X, GAME_HBAR_Y, GAME_HBAR_W, GABE_HBAR_H)
 	//g.initAudioPlayers()
 	g.score = 0

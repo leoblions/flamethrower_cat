@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	//mapRows        int    = 20
-	//mapCols        int    = 20
+	//GAME_MAP_ROWS        int    = 20
+	//GAME_MAP_COLS        int    = 20
 	blankCellValue                   int     = 0
 	brickImage0                      string  = "stoneWall1.png"
 	brickImage1                      string  = "groundBrown.png"
@@ -52,7 +52,7 @@ type TileMap struct {
 	tileSize      int
 	rows          int
 	cols          int
-	tileData      [mapRows][mapCols]int
+	tileData      [GAME_MAP_ROWS][GAME_MAP_COLS]int
 	images        []*ebiten.Image
 	imagesLava    []*ebiten.Image
 	imagesWater   []*ebiten.Image
@@ -97,8 +97,8 @@ type SideCollisionData struct {
 func NewTileMap(game *Game) *TileMap {
 	tm := &TileMap{}
 	tm.game = game
-	tm.rows = mapRows
-	tm.cols = mapCols
+	tm.rows = GAME_MAP_ROWS
+	tm.cols = GAME_MAP_COLS
 	tm.tileSize = GAME_TILE_SIZE
 	tm.solidTiles = []int{0, 6, 14, 16, 21}
 	//tm.tileData = initBlankGrid()
@@ -130,11 +130,11 @@ func (tm *TileMap) updateCullingRegion() {
 	vpCenterX := (worldOffsetX + HalfVP) / tm.tileSize
 	vpCenterY := (worldOffsetY + HalfVP) / tm.tileSize
 
-	tm.cullingRegion.tileX1 = clamp(0, mapCols, vpCenterX-TM_CULLING_DISTANCE_TILES)
-	tm.cullingRegion.tileX2 = clamp(0, mapCols, vpCenterX+TM_CULLING_DISTANCE_TILES)
+	tm.cullingRegion.tileX1 = clamp(0, GAME_MAP_COLS, vpCenterX-TM_CULLING_DISTANCE_TILES)
+	tm.cullingRegion.tileX2 = clamp(0, GAME_MAP_COLS, vpCenterX+TM_CULLING_DISTANCE_TILES)
 
-	tm.cullingRegion.tileY1 = clamp(0, mapRows, vpCenterY-TM_CULLING_DISTANCE_TILES)
-	tm.cullingRegion.tileY2 = clamp(0, mapRows, vpCenterY+TM_CULLING_DISTANCE_TILES)
+	tm.cullingRegion.tileY1 = clamp(0, GAME_MAP_ROWS, vpCenterY-TM_CULLING_DISTANCE_TILES)
+	tm.cullingRegion.tileY2 = clamp(0, GAME_MAP_ROWS, vpCenterY+TM_CULLING_DISTANCE_TILES)
 }
 
 func (pum *TileMap) getDataFileURL() string {
@@ -335,10 +335,10 @@ func (tm *TileMap) initAnimatedTileImages() {
 
 }
 
-func initBlankGrid() [mapRows][mapCols]int {
-	outerArray := [mapRows][mapCols]int{}
-	for y := 0; y < mapRows; y++ {
-		for x := 0; x < mapCols; x++ {
+func initBlankGrid() [GAME_MAP_ROWS][GAME_MAP_COLS]int {
+	outerArray := [GAME_MAP_ROWS][GAME_MAP_COLS]int{}
+	for y := 0; y < GAME_MAP_ROWS; y++ {
+		for x := 0; x < GAME_MAP_COLS; x++ {
 			outerArray[y][x] = blankCellValue
 		}
 	}
@@ -347,9 +347,9 @@ func initBlankGrid() [mapRows][mapCols]int {
 }
 
 func (tm *TileMap) fillWithTile(kind int) {
-	//outerArray := [mapRows][mapCols]int{}
-	for y := 0; y < mapRows; y++ {
-		for x := 0; x < mapCols; x++ {
+	//outerArray := [GAME_MAP_ROWS][GAME_MAP_COLS]int{}
+	for y := 0; y < GAME_MAP_ROWS; y++ {
+		for x := 0; x < GAME_MAP_COLS; x++ {
 			tm.tileData[y][x] = kind
 		}
 	}
@@ -431,7 +431,7 @@ func (tm *TileMap) shiftViewportToFollowPlayer() {
 }
 
 func (tm *TileMap) AddInstanceToGrid(tileX, tileY, assetID int) {
-	if tileX >= mapCols || tileY >= mapRows ||
+	if tileX >= GAME_MAP_COLS || tileY >= GAME_MAP_ROWS ||
 		tileX < 0 || tileY < 0 {
 		fmt.Println("Can't put a tile there.")
 		return

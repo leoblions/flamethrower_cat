@@ -18,9 +18,9 @@ const (
 	UTIL_NUMBER_SEPARATOR = ','
 )
 
-func loadMapFromFile(filePath string) ([mapRows][mapCols]int, error) {
+func loadMapFromFile(filePath string) ([GAME_MAP_ROWS][GAME_MAP_COLS]int, error) {
 	stringList := []*string{}
-	intMatrix := [mapRows][mapCols]int{}
+	intMatrix := [GAME_MAP_ROWS][GAME_MAP_COLS]int{}
 
 	file, err := os.Open(filePath)
 	defer file.Close()
@@ -44,9 +44,9 @@ func loadMapFromFile(filePath string) ([mapRows][mapCols]int, error) {
 		return intMatrix, err
 	}
 	cols := len(strings.Split(*stringList[0], string(UTIL_NUMBER_SEPARATOR)))
-	//intMatrix := [mapRows][mapCols]int{}
+	//intMatrix := [GAME_MAP_ROWS][GAME_MAP_COLS]int{}
 	for y := 0; y < cols; y++ {
-		tempRow := [mapCols]int{}
+		tempRow := [GAME_MAP_COLS]int{}
 		lineString := strings.Split(*stringList[y], string(UTIL_NUMBER_SEPARATOR))
 		for x, value := range lineString {
 			if value == "\x00" {
@@ -97,7 +97,7 @@ func loadDataListFromFile(filePath string) ([][]int, error) {
 		return intMatrix, nil
 	}
 	cols := len(strings.Split(*stringList[0], string(UTIL_NUMBER_SEPARATOR)))
-	//intMatrix := [mapRows][mapCols]int{}
+	//intMatrix := [GAME_MAP_ROWS][GAME_MAP_COLS]int{}
 	_ = cols
 	for y := 0; y < rows; y++ {
 		tempRow := []int{}
@@ -121,7 +121,7 @@ func loadDataListFromFile(filePath string) ([][]int, error) {
 
 }
 
-func writeMapToFile(mapData [mapRows][mapCols]int, filePath string) error {
+func writeMapToFile(mapData [GAME_MAP_ROWS][GAME_MAP_COLS]int, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
 		log.Fatal(err)
