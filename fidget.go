@@ -21,6 +21,7 @@ DATA FILES:
  3 = TUNNEL
  4 = TRAFFIC LIGHT
  5 = LADDER
+ 6 = URCHIN
 
 */
 
@@ -32,6 +33,7 @@ const (
 	SPIKES_IMAGE                = "spikes.png"
 	TRAFFICLIGHT_IMAGE          = "trafficLight.png"
 	LADDER_IMAGE                = "ladder50x100.png"
+	URCHIN_IMAGE                = "urchin.png"
 	FM_FILENAME_BASE            = "fidget"
 	FM_FILENAME_END             = ".csv"
 	FM_SPRITE_H                 = 100
@@ -162,6 +164,8 @@ func (pum *FidgetManager) touchFidgetAction(kind, uid int) {
 	case 5:
 		pum.game.player.touchingLadder = true
 		//fmt.Println("player touched the barrel")
+	case 6:
+		pum.game.player.changeHealth(-1)
 
 	}
 
@@ -175,6 +179,13 @@ func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 		if nil != v && true == v.alive {
 			pum.testRect.x = pum.game.tileMap.tileSize * v.gridX
 			pum.testRect.y = pum.game.tileMap.tileSize * v.gridY
+			if v.kind == 6 {
+				pum.testRect.width = 50
+				pum.testRect.height = 50
+			} else {
+				pum.testRect.width = 50
+				pum.testRect.height = 100
+			}
 
 			if collideRect(*playerRect, *pum.testRect) {
 				//v.alive = false
@@ -212,10 +223,15 @@ func (pum *FidgetManager) initImages() error {
 	image = getSubImage(rawImage, 0, 0, FM_SPRITE_W_SL, FM_SPRITE_H)
 	pum.trafficLightImages = grabImagesRowToList(rawImage, 100, 0, 4)
 	pum.images = append(pum.images, image)
+	// ladder
 	imageDir = path.Join(subdir, LADDER_IMAGE)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	image = getSubImage(rawImage, 0, 0, FM_SPRITE_W_SL, FM_SPRITE_H)
-	pum.trafficLightImages = grabImagesRowToList(rawImage, 100, 0, 4)
+	pum.images = append(pum.images, image)
+	// urchin
+	imageDir = path.Join(subdir, URCHIN_IMAGE)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	image = getSubImage(rawImage, 0, 0, FM_SPRITE_W_SL, FM_SPRITE_H)
 	pum.images = append(pum.images, image)
 	return err
 

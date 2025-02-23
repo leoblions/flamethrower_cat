@@ -36,6 +36,7 @@ const (
 	PL_FRICTION_X_W               = 1.0
 	PL_MAX_VEL            float32 = 20.0
 	PL_MAX_VEL_W          float32 = 2.0
+	PL_MAX_VEL_LADDER     float32 = 5.0
 )
 
 type Player struct {
@@ -214,7 +215,7 @@ func (p *Player) motionSpeedLimit() {
 		p.velY = clamp(-PL_MAX_VEL_W, PL_MAX_VEL_W, p.velY)
 		p.velX = clamp(-PL_MAX_VEL_W, PL_MAX_VEL_W, p.velX)
 	} else if p.touchingLadder {
-		p.velY = clamp(-5, 5, p.velY)
+		p.velY = clamp(-PL_MAX_VEL_LADDER, PL_MAX_VEL_LADDER, p.velY)
 		p.velX = clamp(-PL_MAX_VEL, PL_MAX_VEL, p.velX)
 	} else {
 		p.velY = clamp(-PL_MAX_VEL, PL_MAX_VEL, p.velY)
