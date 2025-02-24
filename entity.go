@@ -36,6 +36,7 @@ const (
 	IMAGES_ATTACK_SHEET         = "jackieD1.png"
 	IMAGES_JACKIE               = "jackieRS.png"
 	IMAGES_MONSTER              = "enemyWog.png"
+	IMAGES_ANT                  = "entityAnt.png"
 	EN_FILENAME_BASE            = "entity"
 	EN_FILENAME_END             = ".csv"
 	EN_SPRITE_H                 = 100

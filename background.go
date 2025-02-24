@@ -11,6 +11,7 @@ const (
 	BGI_MAX_PICKUPS = 10
 	BGI_CLOUDS      = "backgroundClouds.png"
 	BGI_CAVE        = "backgroundCaves.png"
+	BGI_ISLAND      = "backgroundIsland.png"
 	BGI_IMAGE_DIR   = "images"
 
 	BGI_PICKUP_H = 50
@@ -49,6 +50,8 @@ func (BGI *Background) Update() {
 	case 3:
 		//cave
 		BGI.currBGIIndex = 1
+	case 12, 13, 14, 15:
+		BGI.currBGIIndex = 2
 	default:
 		//cloud
 		BGI.currBGIIndex = 0
@@ -71,11 +74,10 @@ func (BGI *Background) initImages() error {
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	BGI.images = append(BGI.images, rawImage)
 
-	//chicken
-	imageDir = path.Join(BGI_IMAGE_DIR, BGI_CLOUDS)
+	// island
+	imageDir = path.Join(BGI_IMAGE_DIR, BGI_ISLAND)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	tempImg = copyAndStretchImage(rawImage, BGI_PICKUP_W, BGI_PICKUP_H)
-	BGI.images = append(BGI.images, tempImg)
+	BGI.images = append(BGI.images, rawImage)
 
 	//key
 	imageDir = path.Join(BGI_IMAGE_DIR, BGI_CLOUDS)

@@ -109,6 +109,7 @@ func (ap *AudioPlayer) initAudioPlayerHelper(soundID string) error {
 	} else {
 		//log.Println("File  found ", jumpFilePath)
 	}
+
 	// get bytes array from file
 	fileBytes, err := os.ReadFile(filePath)
 	streamV, err := vorbis.DecodeF32(bytes.NewReader(fileBytes))

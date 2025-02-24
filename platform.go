@@ -11,21 +11,22 @@ import (
 )
 
 const (
-	PF_DEFAULT_WIDTH            = 150
-	PF_DEFAULT_HEIGHT           = 30
-	PF_DEFAULT_SPEED            = 2
-	PF_MOTION_TICK_RATE         = 4
-	PF_TICK_COUNT_MAX           = 4
-	PF_IMAGE_FILENAME           = "longBrick.png"
-	PF_FILENAME_BASE            = "platform"
-	PF_IMAGE_SUBDIR             = "images"
-	PF_FILENAME_END             = ".csv"
-	PF_MAX_PLATFORMS            = 10
-	PF_MOD_RECT_H               = 3
-	PF_SWITCH_DIRECTION_TICKS   = 100
-	PF_DEF_MOVE_GRID_X          = 5
-	PF_DEF_MOVE_GRID_Y          = 5
-	PF_TOUCH_PLAYER_FOOT_WINDOW = 3
+	PF_DEFAULT_WIDTH             = 150
+	PF_DEFAULT_HEIGHT            = 30
+	PF_DEFAULT_SPEED             = 2
+	PF_MOTION_TICK_RATE          = 4
+	PF_TICK_COUNT_MAX            = 4
+	PF_IMAGE_FILENAME            = "longBrick.png"
+	PF_FILENAME_BASE             = "platform"
+	PF_IMAGE_SUBDIR              = "images"
+	PF_FILENAME_END              = ".csv"
+	PF_MAX_PLATFORMS             = 10
+	PF_MOD_RECT_H                = 3
+	PF_SWITCH_DIRECTION_TICKS    = 100
+	PF_DEF_MOVE_GRID_X           = 5
+	PF_DEF_MOVE_GRID_Y           = 5
+	PF_TOUCH_PLAYER_FOOT_WINDOW  = 3
+	PF_BOTTOM_TESTPOINT_OFFSET_Y = 5
 )
 
 type Platform struct {
@@ -235,7 +236,7 @@ func (pfm *PlatformManager) checkPlatformTouchedPlayer() {
 	playerRect := pfm.game.player.getWorldColliderRect()
 	//rectTop := playerRect.y + (playerRect.height - PF_TOUCH_PLAYER_FOOT_WINDOW)
 	pointT := Point{playerRect.x + playerRect.width/2, playerRect.y + playerRect.height}
-	pointB := Point{playerRect.x + playerRect.width/2, playerRect.y + playerRect.height + 5}
+	pointB := Point{playerRect.x + playerRect.width/2, playerRect.y + playerRect.height + PF_BOTTOM_TESTPOINT_OFFSET_Y}
 	//pfm.modifiedRect.x = playerRect.x
 	//pfm.modifiedRect.y = playerRect.y
 	//pfm.modifiedRect.y = rectTop

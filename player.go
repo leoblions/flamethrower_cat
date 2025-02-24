@@ -12,40 +12,37 @@ import (
 const (
 	subdir = "images"
 	//paddleImage  = "longPaddle.png"
-	playerImageL    = "ffcatL.png"
-	playerImageR    = "ffcatR.png"
-	PL_SPRITE_SHEET = "cattoSS.png"
-	defaultSpeed    = 5
-	//playerHeight         = 100
-	//playerWidth          = 100
+	playerImageL         = "ffcatL.png"
+	playerImageR         = "ffcatR.png"
+	PL_SPRITE_SHEET      = "cattoSS.png"
+	defaultSpeed         = 5
 	PL_SPRITE_W          = 100
 	PL_SPRITE_H          = 100
 	PL_COLLRECT_W        = 50
 	PL_COLLRECT_H        = 100
 	PL_COLLRECT_OFFSET_X = 25
 
-	PL_JUMP_HEIGHT        = 20
-	PL_JUMP_HEIGHT_W      = 1
-	PL_GRAVITY_AMOUNT     = 1.0
-	PL_GRAVITY_AMOUNT_W   = 0.2
-	PL_RUN_BOOST          = 5
-	PL_FRAME_CHANGE_TICKS = 20
-	PL_HEALTH_MAX         = 100
-	//PL_HITBOX_W                   = 50
-	PL_HALF_W = 50
-	//PL_HITBOX_H                   = 100
+	PL_JUMP_HEIGHT                = 20
+	PL_JUMP_HEIGHT_W              = 1
+	PL_GRAVITY_AMOUNT             = 1.0
+	PL_GRAVITY_AMOUNT_W           = 0.2
+	PL_RUN_BOOST                  = 5
+	PL_FRAME_CHANGE_TICKS         = 20
+	PL_HEALTH_MAX                 = 100
+	PL_HALF_W                     = 50
 	PL_LAVA_DAMAGE_AMOUNT         = 1
 	PL_FRICTION_X                 = 1.0
 	PL_FRICTION_X_W               = 1.0
 	PL_MAX_VEL            float32 = 20.0
 	PL_MAX_VEL_W          float32 = 2.0
 	PL_MAX_VEL_LADDER     float32 = 5.0
+
+	PLAYER_PLATFORM_FOOT_POS_X = 50
+	PLAYER_PLATFORM_FOOT_POS_Y = 120
 )
 
 type Player struct {
-	game *Game
-	//worldX           int
-	//worldY           int
+	game               *Game
 	xMax               int
 	screenX            int
 	screenY            int
@@ -79,8 +76,7 @@ type Player struct {
 }
 
 func (p *Player) getWorldColliderRect() rect {
-	//return rect{p.worldX, p.worldY, PL_COLLRECT_W, PL_COLLRECT_H}
-	//p.updateCollrect()
+
 	return *p.collRect
 }
 func (p *Player) getScreenCollrect() rect {
@@ -204,7 +200,7 @@ func (p *Player) motionWaterPhysics() (float32, float32, float32) {
 		gravityAmount = PL_GRAVITY_AMOUNT_W
 		friction = PL_FRICTION_X_W
 		jumpHeight = PL_JUMP_HEIGHT_W
-		//fmt.Println("UW FALL")
+
 	} else if p.footUnderwater && !p.headUnderwater {
 		gravityAmount = 0
 		friction = PL_FRICTION_X
@@ -243,20 +239,17 @@ func (p *Player) playerMotion() {
 	dflags := p.game.input.dflags
 	// underwater physics
 	p.headUnderwater = p.checkHeadUnderWater()
-	//fmt.Printf("underwater head%t foot%t \n", headUnderWater, p.footUnderwater)
+
 	gravityAmount, friction, jumpHeight := p.motionWaterPhysics()
 	p.treadingWater = !p.headUnderwater && p.footUnderwater
 	solidBelowPlayer := p.game.tileMap.solidUnderPlayer(0)
 	p.standingOnPlatform = p.game.platformManager.playerStandingOnPlatform
 	canJump := (solidBelowPlayer || p.standingOnPlatform || p.hoverMode || p.footUnderwater || p.treadingWater)
-	//fmt.Printf("can jump %t \n", canJump)
 
 	var jump bool = false
 
 	if p.standingOnPlatform {
-		//fmt.Println("p.standingOnPlatformform force up")
 	}
-	//playerFootHeight := p.worldX + playerHeight
 
 	if dflags.up && !dflags.down {
 		// jump or float up
@@ -270,7 +263,7 @@ func (p *Player) playerMotion() {
 	} else if !dflags.up && dflags.down {
 		if p.hoverMode || p.standingOnPlatform || p.footUnderwater || p.touchingLadder {
 			p.velY += defaultSpeed
-			//p.standingOnPlatform = false //press down to fall thru p.standingOnPlatformform
+
 		}
 
 	} else if !dflags.down && !dflags.up && (p.treadingWater) && !p.touchingLadder {
@@ -278,7 +271,6 @@ func (p *Player) playerMotion() {
 		p.velY = 0
 	} else if p.hoverMode || p.touchingLadder {
 		p.velY = attenuate(p.velY, friction)
-		//p.standingOnPlatform = false
 	} else if p.standingOnPlatform && !dflags.up && !dflags.down {
 		p.velY = float32(p.game.platformManager.touchingPlatformVelY)
 		p.velX = float32(p.game.platformManager.touchingPlatformVelX)
@@ -333,7 +325,7 @@ func (p *Player) playerMotion() {
 	p.motionSpeedLimit()
 
 	if !p.frozen {
-		//fmt.Println("move player")
+
 		if !sideCollisions.up && p.velY < 0 {
 			p.worldY += int(p.velY)
 
@@ -348,13 +340,13 @@ func (p *Player) playerMotion() {
 
 		if !sideCollisions.left && p.velX < 0 {
 			p.worldX += int(p.velX)
-			//p.currImage = p.imageL
+
 			p.faceLeft = true
 
 		}
 		if !sideCollisions.right && p.velX > 0 {
 			p.worldX += int(p.velX)
-			//p.currImage = p.imageR
+
 			p.faceLeft = false
 
 		}
@@ -365,7 +357,6 @@ func (p *Player) playerMotion() {
 	p.screenY = p.worldY - worldOffsetY
 	p.updateCollrect()
 	p.touchingLadder = false
-	//p.standingOnPlatform = false
 
 }
 
@@ -416,8 +407,8 @@ func (p *Player) checkHeadUnderWater() bool {
 }
 
 func (p *Player) updateState() {
-	footX := p.collRect.x + 50
-	footY := p.collRect.y + 120
+	footX := p.collRect.x + PLAYER_PLATFORM_FOOT_POS_X
+	footY := p.collRect.y + PLAYER_PLATFORM_FOOT_POS_Y
 	if p.game.platformManager.pointCollidesWithPlatform(footX, footY) {
 		p.state = 's'
 	} else {

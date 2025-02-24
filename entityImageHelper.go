@@ -25,6 +25,7 @@ type AllEntitySpriteCollections struct {
 	dogSC    *EntitySpriteCollection
 	blobSC   *EntitySpriteCollection
 	golemSC  *EntitySpriteCollection
+	antSC    *EntitySpriteCollection
 }
 
 type EntitySpriteCollection struct {
@@ -59,6 +60,11 @@ func (em *EntityManager) initEntityImages() error {
 	em.golemSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
 	em.golemSC.stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
 
+	// ant
+	em.antSC = &EntitySpriteCollection{}
+	em.antSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 1)
+	em.antSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
+	em.antSC.stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
 	return err
 
 }
@@ -209,8 +215,29 @@ func (em *EntityManager) selectImage(entityKind, state, frame int) *ebiten.Image
 			imageList = em.golemSC.stand
 
 		}
+	case 5: // ant
+		switch state {
+		case 0:
+			imageList = em.antSC.walk
+		case 1:
+			imageList = em.antSC.attack
+		case 2:
+			imageList = em.antSC.stand
+
+		}
+	default:
+		switch state {
+		case 0:
+			imageList = em.antSC.walk
+		case 1:
+			imageList = em.antSC.attack
+		case 2:
+			imageList = em.antSC.stand
+
+		}
 
 	}
+
 	//fmt.Println(frame)
 	return imageList[frame]
 
