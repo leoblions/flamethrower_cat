@@ -25,6 +25,7 @@ const (
 	PM_FIREBALL_LIFE           = 100
 	PM_EXPLOSION_LIFE          = 40
 	PM_FIRE_ANIMATE_SPEED      = 7
+	PM_EXPLOSION_ANIMATE_SPEED = 4
 	PM_MAX_FIREBALLS           = 10
 	PM_COMPONENT_VECTOR_MAX    = 10
 	PM_DEBOUNCE_INTERVAL       = 120000000
@@ -95,6 +96,9 @@ func (pm *ProjectileManager) UpdateFireballs() {
 	for _, v := range pm.fireballList {
 		if v != nil && v.life > 0 {
 			change := v.life%PM_FIRE_ANIMATE_SPEED == 0
+			if v.kind == 2 {
+				change = v.life%PM_EXPLOSION_ANIMATE_SPEED == 0
+			}
 			if change && v.frame < 3 {
 				v.frame++
 			} else if change {
