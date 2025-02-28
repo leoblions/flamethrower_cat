@@ -22,12 +22,22 @@ const (
 	PF_FILENAME_END              = ".csv"
 	PF_MAX_PLATFORMS             = 10
 	PF_MOD_RECT_H                = 3
-	PF_SWITCH_DIRECTION_TICKS    = 100
+	PF_SWITCH_DIRECTION_TICKS    = 150
 	PF_DEF_MOVE_GRID_X           = 5
 	PF_DEF_MOVE_GRID_Y           = 5
 	PF_TOUCH_PLAYER_FOOT_WINDOW  = 3
 	PF_BOTTOM_TESTPOINT_OFFSET_Y = 5
 )
+
+/*
+direction state:
+0 pause 1
+1 move left/down
+2 pause 2
+3 move up/left 3
+
+
+*/
 
 type Platform struct {
 	startX    int
@@ -157,18 +167,14 @@ func (pfm *PlatformManager) cycleDirection() {
 
 	} else {
 		pfm.currentTick = 0
-		if pfm.directionChangeStage == 0 {
-			pfm.directionChangeStage = 1
-			pfm.direction = 0
-		} else if pfm.directionChangeStage == 1 {
-			pfm.directionChangeStage = 2
+		if pfm.direction == 0 {
 			pfm.direction = 1
-		} else if pfm.directionChangeStage == 2 {
-			pfm.directionChangeStage = 3
+		} else if pfm.direction == 1 {
+			pfm.direction = 2
+		} else if pfm.direction == 2 {
+			pfm.direction = 3
+		} else if pfm.direction == 3 {
 			pfm.direction = 0
-		} else if pfm.directionChangeStage == 3 {
-			pfm.directionChangeStage = 0
-			pfm.direction = -1
 		}
 	}
 
@@ -182,10 +188,18 @@ func (pfm *PlatformManager) Update() {
 }
 
 func (pfm *PlatformManager) platformMotion() {
+	var directionMultiplier int
+	if pfm.direction == 1 {
+		directionMultiplier = 1
+	} else if pfm.direction == 3 {
+		directionMultiplier = -1
+	} else {
+		directionMultiplier = 0
+	}
 	for _, v := range pfm.platformsArray {
 		if nil != v {
-			v.velX = pfm.direction * PF_DEFAULT_SPEED
-			v.velY = pfm.direction * PF_DEFAULT_SPEED
+			v.velX = directionMultiplier * PF_DEFAULT_SPEED
+			v.velY = directionMultiplier * PF_DEFAULT_SPEED
 			v.currX += v.velX
 			v.currY += v.velY
 

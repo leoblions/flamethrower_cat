@@ -93,13 +93,15 @@ func (em *EntityManager) updateFrame(ent *Entity) {
 
 	var leftRune, rightRune rune
 	// swap image directions if not robo dog
-	if ent.kind != 0 {
-		leftRune = 'l'
-		rightRune = 'r'
-	} else {
-		leftRune = 'r'
-		rightRune = 'l'
-	}
+	// if ent.kind != 0 {
+	// 	leftRune = 'l'
+	// 	rightRune = 'r'
+	// } else {
+	// 	leftRune = 'r'
+	// 	rightRune = 'l'
+	// }
+	leftRune = 'r'
+	rightRune = 'l'
 	changeDirection := false
 	if ent.direction != ent.prevDirection {
 		changeDirection = true

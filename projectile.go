@@ -21,7 +21,9 @@ const (
 	PM_IMAGE_FIREBALL          = "fireball.png"
 	PM_IMAGE_SPLAT             = "splatRing.png"
 	PM_IMAGE_BUBBLE            = "bubble.png"
+	PM_IMAGE_EXPLOSION         = "explosion.png"
 	PM_FIREBALL_LIFE           = 100
+	PM_EXPLOSION_LIFE          = 40
 	PM_FIRE_ANIMATE_SPEED      = 7
 	PM_MAX_FIREBALLS           = 10
 	PM_COMPONENT_VECTOR_MAX    = 10
@@ -49,6 +51,7 @@ type ProjectileManager struct {
 	projectileImage []*ebiten.Image
 	fireballImages  [4]*ebiten.Image
 	splatImages     [4]*ebiten.Image
+	explosionImages [5]*ebiten.Image
 	projectileDelay int
 	fireballList    []*Fireball
 	testRect        *rect
@@ -72,6 +75,9 @@ func (pm *ProjectileManager) addFireball(worldX, worldY, kind int) {
 	for _, v := range pm.fireballList {
 		if v == nil || v.life <= 0 {
 			v.life = PM_FIREBALL_LIFE
+			if kind == 2 {
+				v.life = PM_EXPLOSION_LIFE
+			}
 			v.worldX = worldX + PM_FIREBALL_X_OFFSET
 			v.worldY = worldY
 			v.kind = kind
@@ -93,6 +99,7 @@ func (pm *ProjectileManager) UpdateFireballs() {
 				v.frame++
 			} else if change {
 				v.frame = 0
+				pm.game.particleManager.AddParticle(v.worldX, v.worldY, 0)
 			}
 			v.life--
 		}
@@ -142,6 +149,11 @@ func (pm *ProjectileManager) initImages() error {
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	imgTemp = copyAndStretchImage(rawImage, PM_BULLET_SIZE, PM_BULLET_SIZE)
 	pm.projectileImage = append(pm.projectileImage, imgTemp)
+	// explosion
+	imageDir = path.Join(subdir, PM_IMAGE_EXPLOSION)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	imgTemp = copyAndStretchImage(rawImage, PM_BULLET_SIZE, PM_BULLET_SIZE)
+	pm.projectileImage = append(pm.projectileImage, imgTemp)
 
 	// fireball images
 	imageDir = path.Join(subdir, PM_IMAGE_FIREBALL)
@@ -167,6 +179,19 @@ func (pm *ProjectileManager) initImages() error {
 		pm.splatImages[i] = tempImage
 	}
 
+	// explosion  images
+	imageDir = path.Join(subdir, PM_IMAGE_EXPLOSION)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+
+	pm.explosionImages = [5]*ebiten.Image{}
+	for i := 0; i < 5; i++ {
+		x := 50 * i
+		// magick numbers welcome here
+		tempImage := getSubImage(rawImage, x, 0, 50, 50)
+		tempImage = copyAndStretchImage(tempImage, 100, 100)
+		pm.explosionImages[i] = tempImage
+	}
+
 	return err
 }
 
@@ -190,8 +215,10 @@ func (pm *ProjectileManager) DrawFireBalls(screen *ebiten.Image) {
 		var fbCurrImage *ebiten.Image
 		if v.kind == 0 {
 			fbCurrImage = pm.fireballImages[v.frame]
-		} else {
+		} else if v.kind == 1 {
 			fbCurrImage = pm.splatImages[v.frame]
+		} else {
+			fbCurrImage = pm.explosionImages[v.frame]
 		}
 
 		screenX := v.worldX - worldOffsetX
@@ -212,7 +239,11 @@ func (pm *ProjectileManager) Update() {
 
 			if v.projectileCollideWall(pm.game) {
 				v.alive = false
-				pm.addFireball(v.worldX, v.worldY, v.kind)
+				fbKind := 0
+				if v.kind == 1 {
+					fbKind = 1
+				}
+				pm.addFireball(v.worldX, v.worldY, fbKind)
 				//
 				continue
 			}

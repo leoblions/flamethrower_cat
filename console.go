@@ -19,6 +19,7 @@ type Console struct {
 	rasterStringArray [CON_LINES]*RasterString
 	keysReleased      bool
 	currentCommand    string
+	lastCommand       string
 }
 
 const (
@@ -28,7 +29,7 @@ const (
 	CON_HEIGHT            = 100
 	CON_ROW_HEIGHT        = 17
 	CON_LINES             = 5
-	CON_DEBOUNCE_INTERVAL = 120000000
+	CON_DEBOUNCE_INTERVAL = 100000000
 )
 
 var (
@@ -68,7 +69,17 @@ func (con *Console) enterCommand() {
 	//fmt.Println("Entered ", con.currentCommand)
 	con.executeCommand(con.currentCommand)
 	con.cycleLineHistory()
+	con.lastCommand = "" + con.currentCommand
 	con.currentCommand = ""
+	con.updateCommandRow()
+
+}
+
+func (con *Console) repeatLastCommand() {
+	//fmt.Println("Entered ", con.currentCommand)
+	//con.executeCommand(con.currentCommand)
+	con.cycleLineHistory()
+	con.currentCommand = "" + con.lastCommand
 	con.updateCommandRow()
 }
 
@@ -213,6 +224,8 @@ func keyNameMunger(keyName string) rune {
 	case 7:
 		if keyName[0:7] == "Period" {
 			return '.'
+		} else if keyName[0:7] == "ArrowUp" {
+			return 'ȶ'
 		}
 	default:
 		return rune(keyName[0])
@@ -253,6 +266,8 @@ func (con *Console) consoleHandleKeys(keys []ebiten.Key) {
 				con.enterCommand()
 			case ebiten.KeyBackquote:
 				con.game.console.toggleWindow()
+			case ebiten.KeyArrowUp:
+				con.repeatLastCommand()
 			default:
 				keyBytes, _ := k.MarshalText()
 				keyString := string(keyBytes)

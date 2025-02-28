@@ -27,7 +27,7 @@ const (
 	TM_MAP_FILENAME_BASE             string  = "map"
 	TM_MAP_FILENAME_END              string  = ".csv"
 	TM_LOAD_MAP_ON_STARTUP           bool    = true
-	TM_VIEWPORT_SHIFT_EDGE_RANGE     int     = 100
+	TM_VIEWPORT_SHIFT_EDGE_RANGE     int     = 200
 	TM_GRAVITY_ENABLED               bool    = true
 	TM_GRAVITY_AMOUNT                float32 = 0.5
 	TM_SPRITE_SIZE                   int     = 50

@@ -137,7 +137,7 @@ func (pum *FidgetManager) Draw(screen *ebiten.Image) {
 
 func (pum *FidgetManager) Update() {
 	pum.checkFidgetsTouchedPlayer()
-
+	pum.checkProjectileTouchedFidget()
 	pum.game.activateObject = false
 	pum.tlIndex = pum.tlCycler()
 	pum.images[4] = pum.trafficLightImages[pum.tlIndex]
@@ -148,17 +148,32 @@ func (pum *FidgetManager) checkPlayerRanRedlight() {
 
 }
 
-func (pum *FidgetManager) touchFidgetAction(kind, uid int) {
-
-	switch kind {
+func (pum *FidgetManager) touchFidgetAction(touchKind, index int) {
+	/*
+		touchKind
+		0 = player
+		1 = player projectile
+	*/
+	touchedFidget := pum.fidgetsArray[index]
+	switch touchedFidget.kind {
 	case 0, 3:
 		if pum.game.activateObject {
+			uid := touchedFidget.uid
 			pum.game.warpManager.warpPlayerToWarpID(uid)
 			pum.game.activateObject = false
 			pum.game.audioPlayer.playSoundByID("dooropen")
 		}
 	case 1:
-		fmt.Println("player touched the barrel")
+		//fmt.Println("player touched the barrel")
+		if touchKind == 1 {
+			touchedFidget.alive = false
+			pum.game.projectileManager.addFireball(
+				touchedFidget.gridX*GAME_TILE_SIZE,
+				touchedFidget.gridY*GAME_TILE_SIZE,
+				2,
+			)
+		}
+
 	case 2:
 		pum.game.player.changeHealth(-1)
 	case 5:
@@ -175,7 +190,7 @@ func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 
 	//playerRect := pum.game.player.getWorldColliderRect()
 	playerRect := pum.game.player.collRect
-	for _, v := range pum.fidgetsArray {
+	for i, v := range pum.fidgetsArray {
 		if nil != v && true == v.alive {
 			pum.testRect.x = pum.game.tileMap.tileSize * v.gridX
 			pum.testRect.y = pum.game.tileMap.tileSize * v.gridY
@@ -189,7 +204,36 @@ func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 
 			if collideRect(*playerRect, *pum.testRect) {
 				//v.alive = false
-				pum.touchFidgetAction(v.kind, v.uid)
+				pum.touchFidgetAction(0, i)
+			}
+		}
+	}
+}
+
+func (pum *FidgetManager) checkProjectileTouchedFidget() {
+
+	//playerRect := pum.game.player.getWorldColliderRect()
+	fidRect := pum.testRect
+	projPoint := &Point{}
+	for iFid, vFid := range pum.fidgetsArray {
+		for _, vPro := range pum.game.projectileManager.projectileArray {
+			if nil != vFid && nil != vPro && true == vFid.alive && true == vPro.alive {
+				fidRect.x = pum.game.tileMap.tileSize * vFid.gridX
+				fidRect.y = pum.game.tileMap.tileSize * vFid.gridY
+				projPoint.x = vPro.worldX
+				projPoint.y = vPro.worldY
+				if vFid.kind == 6 {
+					fidRect.width = 50
+					fidRect.height = 50
+				} else {
+					fidRect.width = 50
+					fidRect.height = 100
+				}
+
+				if projPoint.intersectsWithRect(fidRect) {
+					//v.alive = false
+					pum.touchFidgetAction(1, iFid)
+				}
 			}
 		}
 	}

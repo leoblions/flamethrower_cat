@@ -36,9 +36,12 @@ const (
 	PL_MAX_VEL            float32 = 20.0
 	PL_MAX_VEL_W          float32 = 2.0
 	PL_MAX_VEL_LADDER     float32 = 5.0
+	PL_DAMAGE_DEBOUNCE            = 100
 
 	PLAYER_PLATFORM_FOOT_POS_X = 50
 	PLAYER_PLATFORM_FOOT_POS_Y = 120
+
+	PL_BUBBLE_PERIOD = 100
 )
 
 type Player struct {
@@ -50,6 +53,7 @@ type Player struct {
 	currentFrame       int
 	currentTickCount   int
 	health             int
+	bubbleTicks        int8
 	velX               float32
 	velY               float32
 	currImage          *ebiten.Image
@@ -68,6 +72,7 @@ type Player struct {
 	treadingWater      bool
 	touchingLadder     bool
 	standingOnPlatform bool
+	damageDebounce     int
 
 	collRect     *rect
 	collRectTile *rect
@@ -313,7 +318,10 @@ func (p *Player) playerMotion() {
 	if jump && !p.hoverMode {
 		//jump
 		p.velY -= jumpHeight
-		p.game.audioPlayer.playSoundByID("jump")
+		if !p.footUnderwater {
+			p.game.audioPlayer.playSoundByID("jump")
+		}
+
 		//_ = playSound(p.game.audioPlayer.soundEffectPlayers["jump"])
 	} else if jump && p.footUnderwater {
 		p.velY -= jumpHeight
@@ -424,8 +432,20 @@ func (p *Player) updateState() {
 
 }
 
-func (p *Player) Update() {
+func (p *Player) bubbleEmitter() {
 
+	if p.bubbleTicks < PL_BUBBLE_PERIOD {
+		p.bubbleTicks++
+	} else {
+		p.bubbleTicks = 0
+		p.game.particleManager.AddParticle(p.worldX+50, p.worldY, 1)
+	}
+}
+
+func (p *Player) Update() {
+	if p.damageDebounce > 0 {
+		p.damageDebounce -= 1
+	}
 	p.playerMotion()
 	p.updateState()
 	p.selectImage()
@@ -436,6 +456,9 @@ func (p *Player) Update() {
 	}
 
 	p.footUnderwater = p.checkPlayerUnderwater()
+	if p.headUnderwater {
+		p.bubbleEmitter()
+	}
 }
 
 func (p *Player) warpPlayerToGridLocation(gridX, gridY int) {
@@ -455,5 +478,17 @@ func (p *Player) changeHealth(hitpoints int) {
 	healthTemp = clamp(0, PL_HEALTH_MAX, healthTemp)
 	p.health = healthTemp
 	p.game.healthBar.FillPercent(p.health)
+
+}
+
+func (p *Player) takeDamageWithDebounce(damage int) {
+	if p.damageDebounce <= 0 {
+		p.damageDebounce = PL_DAMAGE_DEBOUNCE
+		healthTemp := p.health
+		healthTemp -= damage
+		healthTemp = clamp(0, PL_HEALTH_MAX, healthTemp)
+		p.health = healthTemp
+		p.game.healthBar.FillPercent(p.health)
+	}
 
 }

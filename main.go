@@ -140,6 +140,7 @@ type gameComponents struct {
 	audioPlayer       *AudioPlayer
 	healthBar         *Bar
 	background        *Background
+	particleManager   *ParticleManager
 }
 
 func (g *Game) Update() error {
@@ -164,6 +165,7 @@ func (g *Game) Update() error {
 		g.platformManager.Update()
 		g.decorManager.Update()
 		g.editor.Update()
+		g.particleManager.Update()
 
 	}
 
@@ -187,6 +189,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.entityManager.Draw(screen)
 	g.platformManager.Draw(screen)
 	g.decorManager.Draw(screen)
+
+	g.particleManager.Draw(screen)
 	g.healthBar.Draw(screen)
 	g.editor.Draw(screen)
 
@@ -317,7 +321,7 @@ func (g *Game) init() {
 	g.decorManager = NewDecorManager(g)
 	g.background = NewBackground(g)
 	g.healthBar = NewBar(GAME_HBAR_X, GAME_HBAR_Y, GAME_HBAR_W, GABE_HBAR_H)
-	//g.initAudioPlayers()
+	g.particleManager = NewParticleManager(g)
 	g.score = 0
 	g.lives = 3
 

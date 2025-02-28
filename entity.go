@@ -35,7 +35,7 @@ const (
 	IMAGES_WALK_SHEET           = "jackieD1.png"
 	IMAGES_ATTACK_SHEET         = "jackieD1.png"
 	IMAGES_JACKIE               = "jackieRS.png"
-	IMAGES_MONSTER              = "enemyWog.png"
+	IMAGES_MONSTER              = "entitySheet1.png"
 	IMAGES_ANT                  = "entityAnt.png"
 	EN_FILENAME_BASE            = "entity"
 	EN_FILENAME_END             = ".csv"
@@ -110,6 +110,9 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.height = EN_SPRITE_H
 	ent.width = EN_SPRITE_W
 	ent.kind = kind
+	if kind != 0 {
+		ent.isEnemy = true
+	}
 	if kind == 1 {
 		ent.canShoot = true
 	}
@@ -203,7 +206,8 @@ func (em *EntityManager) entitiesShootAtPlayer() {
 			if nil != entity && true == entity.alive && entity.canShoot {
 				epDistance := entity.entityPlayerDistance(em.game)
 				if epDistance < EN_ENTITY_SHOOT_RANGE {
-					em.game.projectileManager.AddProjectile(entity.worldX, entity.worldY, 1)
+					em.game.projectileManager.AddProjectile(
+						entity.worldX, entity.worldY, 1)
 				}
 
 			}
@@ -326,26 +330,26 @@ func (em *EntityManager) entityMotion() {
 
 }
 
-func (em *EntityManager) touchEntityAction(kind, uid int) {
+func (em *EntityManager) touchEntityAction(kind, index int) {
 	//fmt.Println("Entity touched ", kind)
 	//ent.game.incrementScore(1)
-	if kind == 0 && em.game.activateObject == true {
-		em.game.warpManager.warpPlayerToWarpID(uid)
-		em.game.activateObject = false
+	entity := em.entityList[index]
+	if entity.isEnemy {
+		em.game.player.takeDamageWithDebounce(5)
 	}
 }
 
 func (em *EntityManager) checkEntitysTouchedPlayer() {
 
 	playerRect := em.game.player.getWorldColliderRect()
-	for _, v := range em.entityList {
+	for i, v := range em.entityList {
 		if nil != v && true == v.alive {
 			em.testRect.x = em.game.tileMap.tileSize * v.startGridX
 			em.testRect.y = em.game.tileMap.tileSize * v.startGridY
 
 			if collideRect(playerRect, *em.testRect) {
 				//v.alive = false
-				em.touchEntityAction(v.kind, v.uid)
+				em.touchEntityAction(v.kind, i)
 			}
 		}
 	}
