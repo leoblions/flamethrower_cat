@@ -37,6 +37,7 @@ const (
 	IMAGES_JACKIE               = "jackieRS.png"
 	IMAGES_MONSTER              = "entitySheet1.png"
 	IMAGES_ANT                  = "entityAnt.png"
+	IMAGES_FLY                  = "fly.png"
 	EN_FILENAME_BASE            = "entity"
 	EN_FILENAME_END             = ".csv"
 	EN_SPRITE_H                 = 100
@@ -66,8 +67,9 @@ type EntityManager struct {
 	frameChangeTickCount int
 	enemyLastFiredBullet int64
 	entAttackRect        *rect
-
-	AllEntitySpriteCollections
+	entityImageMap       map[string][]*ebiten.Image
+	//AllEntitySpriteCollections
+	esCollections [10]*EntitySpriteCollection
 }
 
 type Entity struct {
@@ -131,6 +133,7 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 func NewEntityManager(game *Game) *EntityManager {
 
 	fm := &EntityManager{}
+	fm.esCollections = [10]*EntitySpriteCollection{}
 	fm.game = game
 	fm.filename_base = EN_FILENAME_BASE
 	fm.maxEntitys = FM_MAX_ENTITY_ROOM

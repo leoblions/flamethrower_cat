@@ -8,25 +8,14 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type EntityManagerImageCollections_0 struct {
-	jackieImages  []*ebiten.Image
-	jackieImagesA []*ebiten.Image
-	jackieImagesS []*ebiten.Image
-	dogImages     []*ebiten.Image
-	dogImagesA    []*ebiten.Image
-	blobImages    []*ebiten.Image
-	blobImagesA   []*ebiten.Image
-	golemImages   []*ebiten.Image
-	golemImagesA  []*ebiten.Image
-}
-
-type AllEntitySpriteCollections struct {
-	jackieSC *EntitySpriteCollection
-	dogSC    *EntitySpriteCollection
-	blobSC   *EntitySpriteCollection
-	golemSC  *EntitySpriteCollection
-	antSC    *EntitySpriteCollection
-}
+// type AllEntitySpriteCollections struct {
+// 	jackieSC *EntitySpriteCollection
+// 	dogSC    *EntitySpriteCollection
+// 	blobSC   *EntitySpriteCollection
+// 	golemSC  *EntitySpriteCollection
+// 	antSC    *EntitySpriteCollection
+// 	flySC    *EntitySpriteCollection
+// }
 
 type EntitySpriteCollection struct {
 	walk   []*ebiten.Image
@@ -36,35 +25,41 @@ type EntitySpriteCollection struct {
 
 func (em *EntityManager) initEntityImages() error {
 	var err error
-	// jackie
-	em.jackieSC = &EntitySpriteCollection{}
-	em.jackieSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 1)
-	em.jackieSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 2)
-	em.jackieSC.stand = grabImagesRowToListFromFilename(IMAGES_JACKIE, 100, 3, 2)
+	// jackie 0
+	em.esCollections[0] = &EntitySpriteCollection{}
+	em.esCollections[0].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 1)
+	em.esCollections[0].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 2)
+	em.esCollections[0].stand = grabImagesRowToListFromFilename(IMAGES_JACKIE, 100, 3, 2)
 	//fmt.Println("Jackie images", len(em.jackieImages))
-	// robo dog
-	em.dogSC = &EntitySpriteCollection{}
-	em.dogSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
-	em.dogSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
-	em.dogSC.stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
+	// robo dog 1
+	em.esCollections[1] = &EntitySpriteCollection{}
+	em.esCollections[1].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
+	em.esCollections[1].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
+	em.esCollections[1].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
 
-	// worm blob
-	em.blobSC = &EntitySpriteCollection{}
-	em.blobSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 1)
-	em.blobSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
-	em.blobSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
+	// worm blob 2
+	em.esCollections[2] = &EntitySpriteCollection{}
+	em.esCollections[2].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 1)
+	em.esCollections[2].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
+	em.esCollections[2].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
 
-	// golem
-	em.golemSC = &EntitySpriteCollection{}
-	em.golemSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 3)
-	em.golemSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
-	em.golemSC.stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
+	// golem 3
+	em.esCollections[3] = &EntitySpriteCollection{}
+	em.esCollections[3].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 3)
+	em.esCollections[3].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
+	em.esCollections[3].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
 
-	// ant
-	em.antSC = &EntitySpriteCollection{}
-	em.antSC.walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 1)
-	em.antSC.attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
-	em.antSC.stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
+	// ant 5
+	em.esCollections[5] = &EntitySpriteCollection{}
+	em.esCollections[5].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 1)
+	em.esCollections[5].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
+	em.esCollections[5].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
+
+	// fly 6
+	em.esCollections[6] = &EntitySpriteCollection{}
+	em.esCollections[6].walk = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 0, 2)
+	em.esCollections[6].attack = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 1, 2)
+	em.esCollections[6].stand = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 1, 2)
 	return err
 
 }
@@ -172,71 +167,35 @@ func grabImagesRowToListFromFilename(filename string, imageSize, gridY, amountX 
 	return outputList
 }
 
+func grabImagesRowToListFromFilenameWH(filename string, imageWidth, imageHeight, gridY, amountX int) []*ebiten.Image {
+	imageDir := path.Join(subdir, filename)
+	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
+	outputList := []*ebiten.Image{}
+	for i := range amountX {
+		x := i * imageWidth
+		y := gridY * imageHeight
+		tempImage := getSubImage(rawImage, x, y, imageWidth, imageHeight)
+		outputList = append(outputList, tempImage)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	return outputList
+}
+
 func (em *EntityManager) selectImage(entityKind, state, frame int) *ebiten.Image {
 	var imageList []*ebiten.Image
-	switch entityKind {
+	if entityKind == 4 {
+		entityKind = 0
+	}
 
-	case 0, 4: // jackie
-		switch state {
-		case 0:
-			imageList = em.jackieSC.walk
-		case 1:
-			imageList = em.jackieSC.attack
-		case 2:
-			imageList = em.jackieSC.stand
-
-		}
-	case 1: // dog
-		switch state {
-		case 0:
-			imageList = em.dogSC.walk
-		case 1:
-			imageList = em.dogSC.attack
-		case 2:
-			imageList = em.dogSC.stand
-
-		}
-
-	case 2: //blob
-		switch state {
-		case 0:
-			imageList = em.blobSC.walk
-		case 1:
-			imageList = em.blobSC.attack
-		case 2:
-			imageList = em.blobSC.stand
-
-		}
-	case 3: // golem
-		switch state {
-		case 0:
-			imageList = em.golemSC.walk
-		case 1:
-			imageList = em.golemSC.attack
-		case 2:
-			imageList = em.golemSC.stand
-
-		}
-	case 5: // ant
-		switch state {
-		case 0:
-			imageList = em.antSC.walk
-		case 1:
-			imageList = em.antSC.attack
-		case 2:
-			imageList = em.antSC.stand
-
-		}
-	default:
-		switch state {
-		case 0:
-			imageList = em.antSC.walk
-		case 1:
-			imageList = em.antSC.attack
-		case 2:
-			imageList = em.antSC.stand
-
-		}
+	switch state {
+	case 0:
+		imageList = em.esCollections[entityKind].walk
+	case 1:
+		imageList = em.esCollections[entityKind].attack
+	case 2:
+		imageList = em.esCollections[entityKind].stand
 
 	}
 

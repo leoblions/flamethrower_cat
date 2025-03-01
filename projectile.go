@@ -23,9 +23,9 @@ const (
 	PM_IMAGE_BUBBLE            = "bubble.png"
 	PM_IMAGE_EXPLOSION         = "explosion.png"
 	PM_FIREBALL_LIFE           = 100
-	PM_EXPLOSION_LIFE          = 40
+	PM_EXPLOSION_LIFE          = 10
 	PM_FIRE_ANIMATE_SPEED      = 7
-	PM_EXPLOSION_ANIMATE_SPEED = 4
+	PM_EXPLOSION_ANIMATE_SPEED = 3
 	PM_MAX_FIREBALLS           = 10
 	PM_COMPONENT_VECTOR_MAX    = 10
 	PM_DEBOUNCE_INTERVAL       = 120000000
@@ -73,12 +73,15 @@ func NewFireball(worldX, worldY, kind int) *Fireball {
 
 func (pm *ProjectileManager) addFireball(worldX, worldY, kind int) {
 	reusedSlot := false
+	var fblife int
+	if kind == 2 {
+		fblife = PM_EXPLOSION_LIFE
+	} else {
+		fblife = PM_FIREBALL_LIFE
+	}
 	for _, v := range pm.fireballList {
 		if v == nil || v.life <= 0 {
-			v.life = PM_FIREBALL_LIFE
-			if kind == 2 {
-				v.life = PM_EXPLOSION_LIFE
-			}
+			v.life = fblife
 			v.worldX = worldX + PM_FIREBALL_X_OFFSET
 			v.worldY = worldY
 			v.kind = kind
@@ -87,7 +90,7 @@ func (pm *ProjectileManager) addFireball(worldX, worldY, kind int) {
 		}
 	}
 	if !reusedSlot && len(pm.fireballList) < PM_MAX_FIREBALLS {
-		fb := &Fireball{worldX, worldY, kind, 0, PM_FIREBALL_LIFE}
+		fb := &Fireball{worldX, worldY, kind, 0, fblife}
 		pm.fireballList = append(pm.fireballList, fb)
 	}
 }

@@ -11,6 +11,7 @@ import (
 const (
 	READINI_SEPERATOR = '='
 	READINI_COMMENT   = '#'
+	READINI_NEWLINE   = "\n"
 )
 
 func readIni(filePath string) (map[string]string, error) {
@@ -56,8 +57,8 @@ func readIni(filePath string) (map[string]string, error) {
 			v[LV-1] != READINI_SEPERATOR {
 			sepPosition := strings.Index(v, string(READINI_SEPERATOR))
 			var substr1, substr2 string
-			substr1 = string(v[0 : sepPosition-1])    //pos 0 to eq-1
-			substr2 = string(v[sepPosition+1 : LV-1]) // pos eq+1 to length-1
+			substr1 = string(v[0 : sepPosition-1])  //pos 0 to eq-1
+			substr2 = string(v[sepPosition+1 : LV]) // pos eq+1 to length-1
 			outmap[substr1] = substr2
 
 		}
@@ -71,6 +72,21 @@ func defaultDataMap() map[string]string {
 	outmap["width"] = "800"
 	outmap["height"] = "600"
 	outmap["console"] = "true"
+	return outmap
+}
+
+func openOrCreateDefaultIni(filePath string) (map[string]string, error) {
+	dataMap, err := readIni(filePath)
+	if err != nil {
+		log.Println("inireader failed to open file ", filePath)
+		dataMap = defaultDataMap()
+		errW := writeHashmapToIni(dataMap, filePath)
+		if errW != nil {
+			log.Println("inireader failed to write default file ", filePath)
+			err = errW
+		}
+	}
+	return dataMap, err
 }
 
 func writeHashmapToIni(dataMap map[string]string, filePath string) error {
@@ -89,6 +105,7 @@ func writeHashmapToIni(dataMap map[string]string, filePath string) error {
 		sb.WriteString(k)
 		sb.WriteRune(READINI_SEPERATOR)
 		sb.WriteString(v)
+		sb.WriteString(READINI_NEWLINE)
 
 		_, err := writer.WriteString(sb.String())
 		if err != nil {
@@ -102,6 +119,15 @@ func writeHashmapToIni(dataMap map[string]string, filePath string) error {
 	} else {
 		log.Println(fmt.Sprintf("Wrote file %s successfully.", filePath))
 		return nil
+	}
+
+}
+
+func pprintMap(dataMap map[string]string) {
+
+	for k, v := range dataMap {
+
+		fmt.Printf("%s = %s\n", k, v)
 	}
 
 }

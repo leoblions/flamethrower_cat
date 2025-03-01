@@ -41,7 +41,8 @@ const (
 	GAME_HBAR_X                             = 20
 	GAME_HBAR_Y                             = 30
 	GAME_HBAR_W                             = 200
-	GABE_HBAR_H                             = 25
+	GAME_HBAR_H                             = 25
+	GAME_INI_FILE                           = "settings.ini"
 )
 
 var (
@@ -227,7 +228,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func NewGame() ebiten.Game {
 	g := &Game{}
-	g.init()
+	g.initGameComponents()
+	g.newGameSession()
 	g.exePath = commandLineArgs[0]
 	//g.player.init()
 
@@ -293,7 +295,7 @@ func (g *Game) marqueeMessageComplete() {
 
 }
 
-func (g *Game) init() {
+func (g *Game) initGameComponents() {
 	startY := PLAYER_START_POS_Y
 	startX := PLAYER_START_POS_X
 	g.activateObject = false
@@ -320,10 +322,14 @@ func (g *Game) init() {
 	g.audioPlayer = NewAudioPlayer(g)
 	g.decorManager = NewDecorManager(g)
 	g.background = NewBackground(g)
-	g.healthBar = NewBar(GAME_HBAR_X, GAME_HBAR_Y, GAME_HBAR_W, GABE_HBAR_H)
+	g.healthBar = NewBar(GAME_HBAR_X, GAME_HBAR_Y, GAME_HBAR_W, GAME_HBAR_H)
 	g.particleManager = NewParticleManager(g)
 	g.score = 0
 	g.lives = 3
+
+}
+
+func (g *Game) newGameSession() {
 
 	g.mode = 0
 	timerLastTimeMillis = time.Now().UnixNano()
@@ -420,11 +426,19 @@ func setResolution() (int, int) {
 func main() {
 	commandLineArgs = os.Args
 	panelWidth, panelHeight = setResolution()
+	dataMap, err := openOrCreateDefaultIni(GAME_INI_FILE)
+	if err != nil {
+		log.Println("failed to open ini")
+	}
+	_ = dataMap
+	pprintMap(dataMap)
 
 	ebiten.SetWindowSize(panelWidth, panelHeight)
 	ebiten.SetWindowTitle("Flamethrower Cat")
 
-	if err := ebiten.RunGame(NewGame()); err != nil {
+	var game = NewGame()
+
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }
