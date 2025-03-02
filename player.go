@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"path"
 
@@ -45,34 +44,34 @@ const (
 )
 
 type Player struct {
-	game               *Game
-	xMax               int
-	screenX            int
-	screenY            int
-	state              rune // s=stand w=walk f=fall/jump
-	currentFrame       int
-	currentTickCount   int
-	health             int
-	bubbleTicks        int8
-	velX               float32
-	velY               float32
-	currImage          *ebiten.Image
-	imageL             *ebiten.Image
-	imageR             *ebiten.Image
-	imageWalkL         []*ebiten.Image
-	imageWalkR         []*ebiten.Image
-	imageFallL         *ebiten.Image
-	imageFallR         *ebiten.Image
-	frozen             bool
-	hoverMode          bool
-	faceLeft           bool
-	run                bool
-	footUnderwater     bool
-	headUnderwater     bool
-	treadingWater      bool
-	touchingLadder     bool
-	standingOnPlatform bool
-	damageDebounce     int
+	game                                         *Game
+	xMax                                         int
+	screenX                                      int
+	screenY                                      int
+	state                                        rune // s=stand w=walk f=fall/jump
+	currentFrame                                 int
+	currentTickCount                             int
+	health                                       int
+	bubbleTicks                                  int8
+	velX                                         float32
+	velY                                         float32
+	currImage                                    *ebiten.Image
+	imageL                                       *ebiten.Image
+	imageR                                       *ebiten.Image
+	imageWalkL, imageWalkR, imageDieR, imageDieL []*ebiten.Image
+	imageFallL                                   *ebiten.Image
+	imageFallR                                   *ebiten.Image
+	imageIndex                                   int
+	frozen                                       bool
+	hoverMode                                    bool
+	faceLeft                                     bool
+	run                                          bool
+	footUnderwater                               bool
+	headUnderwater                               bool
+	treadingWater                                bool
+	touchingLadder                               bool
+	standingOnPlatform                           bool
+	damageDebounce                               int
 
 	collRect     *rect
 	collRectTile *rect
@@ -137,12 +136,17 @@ func (pl *Player) initImages() error {
 	//walk images
 	pl.imageWalkL = grabImagesRowToListFromFilename(PL_SPRITE_SHEET, 100, 1, 4)
 	pl.imageWalkR = copyAndReverseListOfImages(pl.imageWalkL)
-	fmt.Println("tempFallImages ", len(pl.imageWalkR))
+	//fmt.Println("tempFallImages ", len(pl.imageWalkR))
 	//fall, jump images
 	tempFallImages := grabImagesRowToListFromFilename(PL_SPRITE_SHEET, 100, 2, 1)
-	fmt.Println("tempFallImages ", len(tempFallImages))
+	//fmt.Println("tempFallImages ", len(tempFallImages))
 	pl.imageFallL = tempFallImages[0]
 	pl.imageFallR = copyAndReverseListOfImages(tempFallImages)[0]
+
+	tempImages := grabImagesRowToListFromFilename(PL_SPRITE_SHEET, 100, 3, 4)
+	//fmt.Println("tempFallImages ", len(tempFallImages))
+	pl.imageDieL = tempImages
+	pl.imageDieR = copyAndReverseListOfImages(tempImages)
 
 	return err
 
@@ -150,52 +154,6 @@ func (pl *Player) initImages() error {
 
 func (p *Player) Draw(screen *ebiten.Image) {
 	DrawImageAt(screen, p.currImage, p.screenX, p.screenY)
-
-}
-
-func (p *Player) walkCycleNumber() int {
-	if p.currentTickCount < PL_FRAME_CHANGE_TICKS {
-		p.currentTickCount += 1
-	} else {
-		if p.currentFrame < 3 {
-			p.currentFrame += 1
-		} else {
-			p.currentFrame = 0
-		}
-		p.currentTickCount = 0
-	}
-	return p.currentFrame
-}
-
-func (p *Player) selectImage() {
-	switch p.state {
-	case 'w':
-		wsIndex := p.walkCycleNumber()
-		if p.faceLeft {
-			p.currImage = p.imageWalkL[wsIndex]
-		} else {
-			p.currImage = p.imageWalkR[wsIndex]
-		}
-
-	case 'f':
-		if p.faceLeft {
-			p.currImage = p.imageFallL
-		} else {
-			p.currImage = p.imageFallR
-		}
-	case 's':
-		if p.faceLeft {
-			p.currImage = p.imageL
-		} else {
-			p.currImage = p.imageR
-		}
-	default:
-		if p.faceLeft {
-			p.currImage = p.imageL
-		} else {
-			p.currImage = p.imageR
-		}
-	}
 
 }
 
@@ -332,6 +290,12 @@ func (p *Player) playerMotion() {
 
 	p.motionSpeedLimit()
 
+	//don't move if dead
+	if p.state == 'd' {
+		p.velX = 0
+		p.velY = clamp(-10, 0, p.velY)
+	}
+	//apply velocity to position
 	if !p.frozen {
 
 		if !sideCollisions.up && p.velY < 0 {
@@ -360,6 +324,7 @@ func (p *Player) playerMotion() {
 		}
 
 	}
+
 	// cleanup
 	p.screenX = p.worldX - worldOffsetX
 	p.screenY = p.worldY - worldOffsetY
@@ -412,34 +377,6 @@ func (p *Player) checkHeadUnderWater() bool {
 	pY := p.worldY
 	return p.game.tileMap.pointCollidedWithGivenTileKind(pX, pY, TM_WATER_TILE_ID)
 
-}
-
-func (p *Player) updateState() {
-	footX := p.collRect.x + PLAYER_PLATFORM_FOOT_POS_X
-	footY := p.collRect.y + PLAYER_PLATFORM_FOOT_POS_Y
-	if p.game.platformManager.pointCollidesWithPlatform(footX, footY) {
-		p.state = 's'
-	} else {
-		if p.velX != 0 {
-			p.state = 'w'
-		} else {
-			p.state = 's'
-		}
-		if p.velY != 0 {
-			p.state = 'f'
-		}
-	}
-
-}
-
-func (p *Player) bubbleEmitter() {
-
-	if p.bubbleTicks < PL_BUBBLE_PERIOD {
-		p.bubbleTicks++
-	} else {
-		p.bubbleTicks = 0
-		p.game.particleManager.AddParticle(p.worldX+50, p.worldY, 1)
-	}
 }
 
 func (p *Player) Update() {

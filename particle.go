@@ -40,7 +40,7 @@ func NewParticleManager(game *Game) *ParticleManager {
 		log.Fatal(err)
 	}
 	//pmg.particles[0] = NewParticle(0, 0, 0)
-	pmg.AddParticle(0, 0, 0)
+	//pmg.AddParticle(0, 0, 0)
 	return pmg
 
 }

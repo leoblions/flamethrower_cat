@@ -19,6 +19,9 @@ kinds:
 2 = worm blob
 3 = golem
 4 = evil jackie
+5 = ant
+6 = fly
+7 = shark
 
 states:
 0 = walk
@@ -37,7 +40,8 @@ const (
 	IMAGES_JACKIE               = "jackieRS.png"
 	IMAGES_MONSTER              = "entitySheet1.png"
 	IMAGES_ANT                  = "entityAnt.png"
-	IMAGES_FLY                  = "fly.png"
+	IMAGES_FLY                  = "entityFly.png"
+	IMAGES_SHARK                = "entityShark.png"
 	EN_FILENAME_BASE            = "entity"
 	EN_FILENAME_END             = ".csv"
 	EN_SPRITE_H                 = 100
@@ -54,6 +58,11 @@ const (
 	EN_SHOOT_FREQUENCY          = 820000000
 	EN_ENTITY_SHOOT_RANGE       = 400
 	EM_KIND_MAX                 = 4
+)
+
+const (
+	FLY_KIND   = 6
+	SHARK_KIND = 7
 )
 
 type EntityManager struct {
@@ -82,6 +91,7 @@ type Entity struct {
 	health            int
 	frame             int
 	state             int
+	canFly            bool
 
 	direction     rune
 	prevDirection rune
@@ -125,6 +135,9 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.direction = 'f'
 	ent.health = EN_DEFAULT_HEALTH
 	ent.worldY = worldY
+	if ent.kind == FLY_KIND || ent.kind == SHARK_KIND {
+		ent.canFly = true
+	}
 	//fmt.Println("NewEntity add entity %d", kind)
 	return ent
 
@@ -241,6 +254,20 @@ func (entity *Entity) entityFollowPlayer(game *Game) {
 		entity.direction = 'f'
 	}
 
+	if entity.canFly {
+		pposY := game.player.worldY
+
+		if entity.worldY+EN_STOP_FOLLOW_DIST < pposY {
+			entity.velY = EN_ENEMY_SPEED_1
+
+		} else if entity.worldY-EN_STOP_FOLLOW_DIST > pposY {
+			entity.velY = -EN_ENEMY_SPEED_1
+
+		} else {
+			entity.velY = 0
+		}
+	}
+
 }
 
 func (entity *Entity) entityMeleePlayer(game *Game) {
@@ -305,8 +332,9 @@ func (em *EntityManager) entityMotion() {
 		}
 
 		//fmt.Println("EM ", entity.entityDetectPlatformEdge(em.game))
-		if entity.entityDetectPlatformEdge(em.game) || entity.entityDetectAdjacentWall(em.game) {
+		if !entity.canFly && (entity.entityDetectPlatformEdge(em.game) || entity.entityDetectAdjacentWall(em.game)) {
 			entity.velX = 0
+
 		}
 		//calculate coll rect
 		em.testRect.x = entity.worldX

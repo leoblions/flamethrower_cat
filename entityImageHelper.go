@@ -26,40 +26,56 @@ type EntitySpriteCollection struct {
 func (em *EntityManager) initEntityImages() error {
 	var err error
 	// jackie 0
-	em.esCollections[0] = &EntitySpriteCollection{}
+	ce := 0
+	em.esCollections[ce] = &EntitySpriteCollection{}
 	em.esCollections[0].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 1)
 	em.esCollections[0].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_JACKIE, 2)
 	em.esCollections[0].stand = grabImagesRowToListFromFilename(IMAGES_JACKIE, 100, 3, 2)
 	//fmt.Println("Jackie images", len(em.jackieImages))
 	// robo dog 1
-	em.esCollections[1] = &EntitySpriteCollection{}
+	ce = 1
+	em.esCollections[ce] = &EntitySpriteCollection{}
 	em.esCollections[1].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
 	em.esCollections[1].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
 	em.esCollections[1].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 0)
 
 	// worm blob 2
-	em.esCollections[2] = &EntitySpriteCollection{}
+	ce = 2
+	em.esCollections[ce] = &EntitySpriteCollection{}
 	em.esCollections[2].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 1)
 	em.esCollections[2].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
 	em.esCollections[2].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 2)
 
 	// golem 3
+	ce = 3
 	em.esCollections[3] = &EntitySpriteCollection{}
 	em.esCollections[3].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 3)
 	em.esCollections[3].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
 	em.esCollections[3].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_MONSTER, 4)
 
 	// ant 5
+	ce = 5
 	em.esCollections[5] = &EntitySpriteCollection{}
 	em.esCollections[5].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 1)
 	em.esCollections[5].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
 	em.esCollections[5].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_ANT, 2)
 
 	// fly 6
-	em.esCollections[6] = &EntitySpriteCollection{}
-	em.esCollections[6].walk = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 0, 2)
-	em.esCollections[6].attack = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 1, 2)
-	em.esCollections[6].stand = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 1, 2)
+	ce = 6
+	em.esCollections[ce] = &EntitySpriteCollection{}
+	em.esCollections[ce].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_FLY, 1)
+	em.esCollections[ce].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_FLY, 2)
+	em.esCollections[ce].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_FLY, 2)
+	// em.esCollections[6].walk = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 0, 2)
+	// em.esCollections[6].attack = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 1, 2)
+	// em.esCollections[6].stand = grabImagesRowToListFromFilenameWH(IMAGES_FLY, 200, 100, 1, 2)
+
+	// shark 7
+	ce = 7
+	em.esCollections[ce] = &EntitySpriteCollection{}
+	em.esCollections[ce].walk, err = getForwardAndReverseSpriteRowFromFile(IMAGES_SHARK, 1)
+	em.esCollections[ce].attack, err = getForwardAndReverseSpriteRowFromFile(IMAGES_SHARK, 2)
+	em.esCollections[ce].stand, err = getForwardAndReverseSpriteRowFromFile(IMAGES_SHARK, 2)
 	return err
 
 }
