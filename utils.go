@@ -306,16 +306,33 @@ func DrawImageAt(screen *ebiten.Image, image *ebiten.Image, x int, y int) {
 func copyAndStretchImage(orig *ebiten.Image, newX, newY int) *ebiten.Image {
 	outputImage := ebiten.NewImage(newX, newY)
 	oldX, oldY := orig.Bounds().Size().X, orig.Bounds().Size().Y
-	//fmt.Println(newX)
 	factorX := float64(newX) / float64(oldX)
 	factorY := float64(newY) / float64(oldY)
-	//factorX = 5
-	//factorY = 5
+
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(factorX, factorY)
 	outputImage.DrawImage(orig, op)
 	return outputImage
 
+}
+
+func rescaleSliceOfImages(inputList []*ebiten.Image, scaleFactor float64) []*ebiten.Image {
+	outputList := []*ebiten.Image{}
+	for _, v := range inputList {
+		oldX, oldY := v.Bounds().Size().X, v.Bounds().Size().Y
+
+		//factorX := scaleFactor / float64(oldX)
+		//factorY := scaleFactor / float64(oldY)
+		newX, newY := int(scaleFactor*float64(oldX)), int(scaleFactor*float64(oldY))
+		//fmt.Println(oldX, " ", newX)
+		outputImage := ebiten.NewImage(newX, newY)
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(scaleFactor, scaleFactor)
+		outputImage.DrawImage(v, op)
+		//tempImage := FlipHorizontal(v)
+		outputList = append(outputList, outputImage)
+	}
+	return outputList
 }
 
 func FlipHorizontal(source *ebiten.Image) *ebiten.Image {

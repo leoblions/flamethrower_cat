@@ -384,6 +384,7 @@ func (g *Game) loadLevel(level int) {
 	g.pickupManager.loadDataFromFile()
 	g.fidgetManager.loadDataFromFile()
 	g.entityManager.loadDataFromFile()
+	g.entityManager.addLevelBoss()
 	g.platformManager.loadDataFromFile()
 	g.decorManager.loadDataFromFile()
 

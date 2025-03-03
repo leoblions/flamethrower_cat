@@ -12,6 +12,7 @@ const (
 	BGI_CLOUDS      = "backgroundClouds.png"
 	BGI_CAVE        = "backgroundCaves.png"
 	BGI_ISLAND      = "backgroundIsland.png"
+	BGI_LIGHTHOUSE  = "backgroundLighthouse.png"
 	BGI_IMAGE_DIR   = "images"
 
 	BGI_PICKUP_H = 50
@@ -51,7 +52,11 @@ func (BGI *Background) Update() {
 		//cave
 		BGI.currBGIIndex = 1
 	case 12, 13, 14, 15:
+		//island
 		BGI.currBGIIndex = 2
+	case 19, 20, 21:
+		//lighthouse
+		BGI.currBGIIndex = 3
 	default:
 		//cloud
 		BGI.currBGIIndex = 0
@@ -79,10 +84,15 @@ func (BGI *Background) initImages() error {
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	BGI.images = append(BGI.images, rawImage)
 
-	//key
+	// lighthouse
+	imageDir = path.Join(BGI_IMAGE_DIR, BGI_LIGHTHOUSE)
+	tempImg, _, err = ebitenutil.NewImageFromFile(imageDir)
+	//tempImg = copyAndStretchImage(rawImage, BGI_PICKUP_W, BGI_PICKUP_H)
+	BGI.images = append(BGI.images, tempImg)
+
 	imageDir = path.Join(BGI_IMAGE_DIR, BGI_CLOUDS)
-	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
-	tempImg = copyAndStretchImage(rawImage, BGI_PICKUP_W, BGI_PICKUP_H)
+	tempImg, _, err = ebitenutil.NewImageFromFile(imageDir)
+	//tempImg = copyAndStretchImage(rawImage, BGI_PICKUP_W, BGI_PICKUP_H)
 	BGI.images = append(BGI.images, tempImg)
 	return err
 

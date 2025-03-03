@@ -1,11 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"math"
 	"path"
-	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -22,6 +19,9 @@ kinds:
 5 = ant
 6 = fly
 7 = shark
+8 = bird
+9 = earwig
+10 = boss body part
 
 states:
 0 = walk
@@ -33,15 +33,10 @@ sprite index:
 3 - 7 = right
 */
 const (
-	FM_MAX_ENTITY_ROOM          = 10
+	EN_MAX_ENTITIES_AT_ONCE     = 10
 	IMAGES_IDLE_SHEET           = "jackieD1.png"
 	IMAGES_WALK_SHEET           = "jackieD1.png"
 	IMAGES_ATTACK_SHEET         = "jackieD1.png"
-	IMAGES_JACKIE               = "jackieRS.png"
-	IMAGES_MONSTER              = "entitySheet1.png"
-	IMAGES_ANT                  = "entityAnt.png"
-	IMAGES_FLY                  = "entityFly.png"
-	IMAGES_SHARK                = "entityShark.png"
 	EN_FILENAME_BASE            = "entity"
 	EN_FILENAME_END             = ".csv"
 	EN_SPRITE_H                 = 100
@@ -58,6 +53,9 @@ const (
 	EN_SHOOT_FREQUENCY          = 820000000
 	EN_ENTITY_SHOOT_RANGE       = 400
 	EM_KIND_MAX                 = 4
+	EN_MAX_ENTITY_KINDS         = 12
+	EM_BARNACLEFISH_TYPE        = 11
+	EM_BOSS_HEALTH              = 300
 )
 
 const (
@@ -78,7 +76,7 @@ type EntityManager struct {
 	entAttackRect        *rect
 	entityImageMap       map[string][]*ebiten.Image
 	//AllEntitySpriteCollections
-	esCollections [10]*EntitySpriteCollection
+	esCollections [EN_MAX_ENTITY_KINDS]*EntitySpriteCollection
 }
 
 type Entity struct {
@@ -92,13 +90,16 @@ type Entity struct {
 	frame             int
 	state             int
 	canFly            bool
-
-	direction     rune
-	prevDirection rune
-	alive         bool
-	onScreen      bool
-	isEnemy       bool
-	canShoot      bool
+	motionMethod      func(*Game)
+	drawMethod        func(*ebiten.Image, *Entity)
+	bossParts         []*BossPart
+	direction         rune
+	prevDirection     rune
+	alive             bool
+	onScreen          bool
+	isEnemy           bool
+	canShoot          bool
+	gravityOn         bool
 
 	MobileObject
 }
@@ -135,6 +136,22 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.direction = 'f'
 	ent.health = EN_DEFAULT_HEALTH
 	ent.worldY = worldY
+	ent.gravityOn = true
+
+	if ent.kind == BOSS_ENT_KIND || ent.kind == EM_BARNACLEFISH_TYPE {
+		// regular enemy
+		//ent.motionMethod = ent.mobileEntityFollow
+		// boss
+		ent.motionMethod = ent.bossMotion
+		ent.gravityOn = false
+		ent.health = EM_BOSS_HEALTH
+	} else {
+		// regular enemy
+		ent.motionMethod = ent.mobileEntityFollow
+		// boss
+		//ent.motionMethod = ent.bossMotion
+	}
+
 	if ent.kind == FLY_KIND || ent.kind == SHARK_KIND {
 		ent.canFly = true
 	}
@@ -146,15 +163,13 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 func NewEntityManager(game *Game) *EntityManager {
 
 	fm := &EntityManager{}
-	fm.esCollections = [10]*EntitySpriteCollection{}
+	fm.esCollections = [EN_MAX_ENTITY_KINDS]*EntitySpriteCollection{}
 	fm.game = game
 	fm.filename_base = EN_FILENAME_BASE
-	fm.maxEntitys = FM_MAX_ENTITY_ROOM
+	fm.maxEntitys = EN_MAX_ENTITIES_AT_ONCE
 	fm.initImages()
 	fm.initEntityImages()
 	fm.entityList = []*Entity{}
-	//ent.AddPickup(200, 200, 0)
-	//ent.AddPickup(200, 300, 0)
 	fm.testRect = &rect{0, 0, EN_SPRITE_W, EN_SPRITE_H}
 	fm.assetID = 0
 	fm.loadDataFromFile()
@@ -165,19 +180,45 @@ func NewEntityManager(game *Game) *EntityManager {
 	return fm
 }
 
-func (ent *EntityManager) Draw(screen *ebiten.Image) {
+func (em *EntityManager) Draw(screen *ebiten.Image) {
 
-	for _, v := range ent.entityList {
+	for i, v := range em.entityList {
+		entPtr := em.entityList[i]
 		if nil != v && true == v.alive {
-			//fmt.Println("ent draw")
-			screenX := (v.worldX) - worldOffsetX
-			screenY := (v.worldY) - worldOffsetY
-			entImage := ent.selectImage(v.kind, v.state, v.frame)
-			DrawImageAt(screen, entImage, screenX, screenY)
+			// screenX := (v.worldX) - worldOffsetX
+			// screenY := (v.worldY) - worldOffsetY
+			// entImage := em.selectImage(v.kind, v.state, v.frame)
+			// DrawImageAt(screen, entImage, screenX, screenY)
+			if v.kind == BOSS_ENT_KIND {
+				em.drawBoss(screen, entPtr)
+			} else {
+				em.drawRegularEntity(screen, entPtr)
+			}
 		}
 	}
 
 }
+
+func (em *EntityManager) drawRegularEntity(screen *ebiten.Image, ent *Entity) {
+
+	screenX := (ent.worldX) - worldOffsetX
+	screenY := (ent.worldY) - worldOffsetY
+	entImage := em.selectImage(ent.kind, ent.state, ent.frame)
+	DrawImageAt(screen, entImage, screenX, screenY)
+
+}
+
+func (em *EntityManager) drawBoss(screen *ebiten.Image, ent *Entity) {
+	em.drawRegularEntity(screen, ent)
+	for _, v := range ent.bossParts {
+		screenX := (v.worldX) - worldOffsetX
+		screenY := (v.worldY) - worldOffsetY
+		entImage := em.selectImage(ent.kind, ent.state, v.frame)
+		DrawImageAt(screen, entImage, screenX, screenY)
+	}
+
+}
+
 func (em *EntityManager) updateEntityListAnimationFrame() {
 	if em.frameChangeTickCount < EN_FRAME_CHANGE_TICKS {
 		em.frameChangeTickCount++
@@ -323,19 +364,45 @@ func (entity *Entity) entityDetectAdjacentWall(game *Game) bool {
 
 }
 
+func (entity *Entity) mobileEntityFollow(game *Game) {
+	if entity.health > 0 {
+		entity.entityFollowPlayer(game)
+		entity.entityMeleePlayer(game)
+	}
+
+	//fmt.Println("EM ", entity.entityDetectPlatformEdge(em.game))
+	if !entity.canFly && (entity.entityDetectPlatformEdge(game) ||
+		entity.entityDetectAdjacentWall(game)) {
+		entity.velX = 0
+
+	}
+
+}
+
+func (entity *Entity) bossBodyPartMotion(game *Game) {
+
+}
+
+func (entity *Entity) bossMotion(game *Game) {
+	if entity.health > 0 {
+		entity.entityFollowPlayer(game)
+		entity.entityMeleePlayer(game)
+	}
+	if entity.kind == EM_BARNACLEFISH_TYPE {
+		entity.velX = 0
+		entity.velY = 0
+		entity.canFly = true
+	}
+
+}
+
 func (em *EntityManager) entityMotion() {
 
 	for _, entity := range em.entityList {
-		if entity.health > 0 {
-			entity.entityFollowPlayer(em.game)
-			entity.entityMeleePlayer(em.game)
-		}
 
-		//fmt.Println("EM ", entity.entityDetectPlatformEdge(em.game))
-		if !entity.canFly && (entity.entityDetectPlatformEdge(em.game) || entity.entityDetectAdjacentWall(em.game)) {
-			entity.velX = 0
+		//modifiable function pointer to perform movement
+		entity.motionMethod(em.game)
 
-		}
 		//calculate coll rect
 		em.testRect.x = entity.worldX
 		em.testRect.y = entity.worldY
@@ -344,7 +411,7 @@ func (em *EntityManager) entityMotion() {
 
 		// check collision
 		sideCollisions := em.game.tileMap.getSideCollisionData(*em.testRect)
-		if !sideCollisions.down {
+		if !sideCollisions.down && entity.gravityOn {
 			entity.velY += PL_GRAVITY_AMOUNT
 		} else if entity.velY > 0 {
 			entity.velY = 0
@@ -377,6 +444,8 @@ func (em *EntityManager) checkEntitysTouchedPlayer() {
 		if nil != v && true == v.alive {
 			em.testRect.x = em.game.tileMap.tileSize * v.startGridX
 			em.testRect.y = em.game.tileMap.tileSize * v.startGridY
+			em.testRect.width = v.width
+			em.testRect.height = v.height
 
 			if collideRect(playerRect, *em.testRect) {
 				//v.alive = false
@@ -435,111 +504,4 @@ func (ent *EntityManager) rectCollideWithEntity(projectile *rect) *Entity {
 	}
 
 	return nil
-}
-
-func (ent *EntityManager) saveDataToFile() {
-	name := ent.getDataFileURL()
-	numericData := [][]int{}
-	rows := len(ent.entityList)
-	for i := 0; i < rows; i++ {
-		entObj := ent.entityList[i]
-		if entObj != nil {
-			record := []int{entObj.kind, entObj.startGridX, entObj.startGridY, entObj.uid}
-			numericData = append(numericData, record)
-		}
-
-	}
-	if rows != 0 {
-
-		write2DIntListToFile(numericData, name)
-	} else {
-		log.Println("Entitys: no data to write, ", name)
-	}
-}
-func (ent *EntityManager) getDataFileURL() string {
-	filename := ent.filename_base + strconv.Itoa(ent.game.level) + GAME_DATA_MATRIX_END
-	URL := path.Join(GAME_LEVEL_DATA_DIR, filename)
-	return URL
-}
-func (ent *EntityManager) loadDataFromFile() error {
-	ent.entityList = []*Entity{}
-	//writeMapToFile(tm.tileData, TM_DEFAULT_MAP_FILENAME)
-	name := ent.getDataFileURL()
-	numericData, err := loadDataListFromFile(name)
-	rows := len(numericData)
-	if rows == 0 {
-		log.Println("Entity loadDataFromFile no data to load")
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	for i := 0; i < FM_MAX_ENTITY_ROOM && i < rows; i++ {
-		v := numericData[i]
-		//ent.entityList[i] = &Entity{v[0], v[1], v[2], v[3], true, true}
-		entityTemp := NewEntity(v[0], v[1], v[2])
-		entityTemp.uid = v[3]
-		ent.entityList = append(ent.entityList, entityTemp)
-		fmt.Println("added entity ")
-	}
-	return nil
-}
-func (ent *EntityManager) getUniqueUID() int {
-
-	return 0
-}
-
-func (ent *EntityManager) AddInstanceToGrid(gridX, gridY, kind int) {
-	//emptySlot := ent.inactiveSlot()
-	if 1 == 1 {
-		x := gridX
-		y := gridY
-		//uid := ent.getUniqueUID()
-		entity := NewEntity(kind, x, y)
-		entity.alive = true
-		entity.uid = ent.getUniqueUID()
-		entity.width = EN_SPRITE_W
-		entity.height = EN_SPRITE_H
-		ent.entityList = append(ent.entityList, entity)
-		log.Printf("Added Entity %d at %d, %d\n", kind, gridX, gridY)
-	} else {
-		log.Println("Failed to add Entity, no open slots")
-	}
-}
-
-func (tm *EntityManager) validatAssetID(kind int) bool {
-	if kind < len(tm.images) && kind > -1 {
-		return true
-	} else {
-		return false
-	}
-
-}
-
-func (tm *EntityManager) CycleAssetKind(direction int) {
-	propAssetID := tm.assetID + direction
-	isValid := tm.validatAssetID(propAssetID)
-	if isValid {
-		tm.assetID = propAssetID
-	}
-
-	fmt.Println("Selected Entity ", tm.assetID)
-
-}
-
-func (tm *EntityManager) getAssetID() int {
-	fmt.Println("EntityManager getAssetID", tm.assetID)
-	return tm.assetID
-
-}
-
-func (tm *EntityManager) setAssetID(assetID int) {
-
-	if assetID < EM_KIND_MAX && assetID >= 0 {
-		tm.assetID = assetID
-	}
-	tm.assetID = assetID
-	fmt.Println("EntityManager Selected entity type ", tm.assetID)
-
 }

@@ -26,6 +26,7 @@ const (
 	DM_FACTORY_1                = "decorFactory100.png"
 	DM_SEASIDE                  = "decorSeaside.png"
 	DM_ALIEN                    = "decorAlienA.png"
+	DM_FISH                     = "fishSprites.png"
 	DM_FILENAME_BASE            = "Decor"
 	DM_FILENAME_END             = ".csv"
 	DM_SPRITE_H                 = 100
@@ -144,6 +145,11 @@ func (dm *DecorManager) initImages() error {
 	imageDir = path.Join(subdir, DM_ALIEN)
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	cutImages = cutSpriteSheet(rawImage, DM_SPRITE_W, DM_SPRITE_H, 2, 2)
+	dm.images = append(dm.images, cutImages...)
+	// fish
+	imageDir = path.Join(subdir, DM_FISH)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	cutImages = cutSpriteSheet(rawImage, 100, 200, 4, 1)
 	dm.images = append(dm.images, cutImages...)
 	return err
 
