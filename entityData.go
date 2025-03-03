@@ -12,12 +12,12 @@ const (
 	EM_BARNACLEFISH_H = 600
 )
 
-func (ent *EntityManager) saveDataToFile() {
-	name := ent.getDataFileURL()
+func (em *EntityManager) saveDataToFile() {
+	name := em.getDataFileURL()
 	numericData := [][]int{}
-	rows := len(ent.entityList)
+	rows := len(em.entityList)
 	for i := 0; i < rows; i++ {
-		entObj := ent.entityList[i]
+		entObj := em.entityList[i]
 		if entObj != nil {
 			record := []int{entObj.kind, entObj.startGridX, entObj.startGridY, entObj.uid}
 			numericData = append(numericData, record)
@@ -32,16 +32,16 @@ func (ent *EntityManager) saveDataToFile() {
 	}
 }
 
-func (ent *EntityManager) getDataFileURL() string {
-	filename := ent.filename_base + strconv.Itoa(ent.game.level) + GAME_DATA_MATRIX_END
+func (em *EntityManager) getDataFileURL() string {
+	filename := em.filename_base + strconv.Itoa(em.game.level) + GAME_DATA_MATRIX_END
 	URL := path.Join(GAME_LEVEL_DATA_DIR, filename)
 	return URL
 }
 
-func (ent *EntityManager) loadDataFromFile() error {
-	ent.entityList = []*Entity{}
+func (em *EntityManager) loadDataFromFile() error {
+	em.entityList = []*Entity{}
 	//writeMapToFile(tm.tileData, TM_DEFAULT_MAP_FILENAME)
-	name := ent.getDataFileURL()
+	name := em.getDataFileURL()
 	numericData, err := loadDataListFromFile(name)
 	rows := len(numericData)
 	if rows == 0 {
@@ -55,25 +55,26 @@ func (ent *EntityManager) loadDataFromFile() error {
 	for i := 0; i < EN_MAX_ENTITIES_AT_ONCE && i < rows; i++ {
 		v := numericData[i]
 		//entity = ent.AddInstanceToGrid(v[0], v[1], v[2])
-		entityTemp := NewEntity(v[0], v[1], v[2])
+		entityTemp := em.createUniqueEntity(v[1], v[2], v[0])
+		//entityTemp := NewEntity(v[0], v[1], v[2])
 		entityTemp.uid = v[3]
-		ent.entityList = append(ent.entityList, entityTemp)
+		em.entityList = append(em.entityList, entityTemp)
 		//fmt.Println("added entity ")
 	}
 	return nil
 }
 
-func (ent *EntityManager) addEntity(kind, startGridX, startGridY int) *Entity {
+func (em *EntityManager) addEntity(kind, startGridX, startGridY int) *Entity {
 	entityTemp := NewEntity(kind, startGridX, startGridY)
-	ent.entityList = append(ent.entityList, entityTemp)
+	em.entityList = append(em.entityList, entityTemp)
 	return entityTemp
 }
 
-func (ent *EntityManager) removeEntityByID(uid int) bool {
+func (em *EntityManager) removeEntityByID(uid int) bool {
 	var found = false
-	for i, v := range ent.entityList {
+	for i, v := range em.entityList {
 		if v.uid == uid {
-			ent.entityList[i] = nil
+			em.entityList[i] = nil
 			found = true
 			break
 		}
@@ -81,17 +82,17 @@ func (ent *EntityManager) removeEntityByID(uid int) bool {
 	return found
 }
 
-func (ent *EntityManager) getUniqueUID() int {
+func (em *EntityManager) getUniqueUID() int {
 
 	return 0
 }
 
-func (ent *EntityManager) AddInstanceToGrid(gridX, gridY, kind int) {
+func (em *EntityManager) AddInstanceToGrid(gridX, gridY, kind int) {
 	var entity *Entity
-	if len(ent.entityList) <= EN_MAX_ENTITIES_AT_ONCE {
+	if len(em.entityList) <= EN_MAX_ENTITIES_AT_ONCE {
 		//uid := ent.getUniqueUID()
-		entity = ent.createEntityInstance(gridX, gridY, kind)
-		ent.entityList = append(ent.entityList, entity)
+		entity = em.createUniqueEntity(gridX, gridY, kind)
+		em.entityList = append(em.entityList, entity)
 		log.Printf("Added Entity %d at %d, %d\n", kind, gridX, gridY)
 	} else {
 		log.Println("Failed to add Entity, no open slots")
@@ -99,30 +100,23 @@ func (ent *EntityManager) AddInstanceToGrid(gridX, gridY, kind int) {
 
 }
 
-func (ent *EntityManager) createEntityInstance(gridX, gridY, kind int) *Entity {
-	x := gridX
-	y := gridY
-	//uid := ent.getUniqueUID()
-	entity := NewEntity(kind, x, y)
-	entity.alive = true
-	entity.uid = ent.getUniqueUID()
-	entity.width = EN_SPRITE_W
-	entity.height = EN_SPRITE_H
-	if entity.kind == EM_BARNACLEFISH_TYPE {
-		entity.width = EM_BARNACLEFISH_W
-		entity.height = EM_BARNACLEFISH_H
-	}
+func (em *EntityManager) createUniqueEntity(gridX, gridY, kind int) *Entity {
+
+	entity := NewEntity(kind, gridX, gridY)
+
+	entity.uid = em.getUniqueUID()
+
 	return entity
 }
 
-func (ent *EntityManager) AddEntityToGrid(gridX, gridY, kind int) *Entity {
+func (em *EntityManager) AddEntityToGrid(gridX, gridY, kind int) *Entity {
 	var entity *Entity
-	if len(ent.entityList) <= EN_MAX_ENTITIES_AT_ONCE {
+	if len(em.entityList) <= EN_MAX_ENTITIES_AT_ONCE {
 		//x := gridX
 		//y := gridY
 		//uid := ent.getUniqueUID()
-		entity = ent.createEntityInstance(gridX, gridY, kind)
-		ent.entityList = append(ent.entityList, entity)
+		entity = em.createUniqueEntity(gridX, gridY, kind)
+		em.entityList = append(em.entityList, entity)
 		log.Printf("Added Entity %d at %d, %d\n", kind, gridX, gridY)
 	} else {
 		log.Println("Failed to add Entity, no open slots")

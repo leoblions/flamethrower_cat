@@ -21,6 +21,7 @@ const (
 	PM_IMAGE_FIREBALL          = "fireball.png"
 	PM_IMAGE_SPLAT             = "splatRing.png"
 	PM_IMAGE_BUBBLE            = "bubble.png"
+	PM_IMAGE_FIREBALL3         = "projectile3.png"
 	PM_IMAGE_EXPLOSION         = "explosion.png"
 	PM_FIREBALL_LIFE           = 100
 	PM_EXPLOSION_LIFE          = 10
@@ -49,13 +50,14 @@ type ProjectileManager struct {
 	debounceLastTime int64
 	projectileArray  [PM_MAX_PROJECTILES]*Projectile
 	//projectileArrayEnemy  [PM_MAX_PROJECTILES]*Projectile
-	projectileImage []*ebiten.Image
-	fireballImages  [4]*ebiten.Image
-	splatImages     [4]*ebiten.Image
-	explosionImages [5]*ebiten.Image
-	projectileDelay int
-	fireballList    []*Fireball
-	testRect        *rect
+	projectileImage  []*ebiten.Image
+	projectileImage3 *ebiten.Image
+	fireballImages   [4]*ebiten.Image
+	splatImages      [4]*ebiten.Image
+	explosionImages  [5]*ebiten.Image
+	projectileDelay  int
+	fireballList     []*Fireball
+	testRect         *rect
 }
 
 type Fireball struct {
@@ -198,6 +200,10 @@ func (pm *ProjectileManager) initImages() error {
 		tempImage = copyAndStretchImage(tempImage, 100, 100)
 		pm.explosionImages[i] = tempImage
 	}
+
+	// fireball 3
+	imageDir = path.Join(subdir, PM_IMAGE_FIREBALL3)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 
 	return err
 }

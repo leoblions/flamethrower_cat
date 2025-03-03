@@ -55,7 +55,9 @@ const (
 	EM_KIND_MAX                 = 4
 	EN_MAX_ENTITY_KINDS         = 12
 	EM_BARNACLEFISH_TYPE        = 11
+	EM_MOTH_TYPE                = 10
 	EM_BOSS_HEALTH              = 300
+	EM_CULL_ENTITY_OOB_BUFFER_Y = 100
 )
 
 const (
@@ -96,10 +98,13 @@ type Entity struct {
 	direction         rune
 	prevDirection     rune
 	alive             bool
+	draw              bool
+	frozen            bool
 	onScreen          bool
 	isEnemy           bool
 	canShoot          bool
 	gravityOn         bool
+	clipping          bool
 
 	MobileObject
 }
@@ -110,6 +115,12 @@ func (ent *Entity) entityTakeDamage(damage int) {
 		if newHealth < 0 {
 			ent.health = 0
 			ent.alive = false
+			if ent.kind == EM_BARNACLEFISH_TYPE || ent.kind == EM_MOTH_TYPE {
+				ent.gravityOn = true
+				ent.frozen = false
+			} else {
+				ent.draw = false
+			}
 		} else {
 			ent.health = newHealth
 		}
@@ -123,13 +134,11 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.height = EN_SPRITE_H
 	ent.width = EN_SPRITE_W
 	ent.kind = kind
-	if kind != 0 {
-		ent.isEnemy = true
-	}
-	if kind == 1 {
-		ent.canShoot = true
-	}
 	ent.alive = true
+	ent.draw = true
+	ent.alive = true
+	ent.draw = true
+	ent.clipping = true
 	ent.startGridX = startGridX
 	ent.startGridY = startGridY
 	ent.worldX = worldX
@@ -137,13 +146,21 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	ent.health = EN_DEFAULT_HEALTH
 	ent.worldY = worldY
 	ent.gravityOn = true
+	ent.specialSetup()
 
+	//fmt.Println("NewEntity add entity %d", kind)
+	return ent
+
+}
+
+func (ent *Entity) specialSetup() {
 	if ent.kind == BOSS_ENT_KIND || ent.kind == EM_BARNACLEFISH_TYPE {
 		// regular enemy
 		//ent.motionMethod = ent.mobileEntityFollow
 		// boss
 		ent.motionMethod = ent.bossMotion
 		ent.gravityOn = false
+		ent.frozen = true
 		ent.health = EM_BOSS_HEALTH
 	} else {
 		// regular enemy
@@ -155,9 +172,22 @@ func NewEntity(kind, startGridX, startGridY int) *Entity {
 	if ent.kind == FLY_KIND || ent.kind == SHARK_KIND {
 		ent.canFly = true
 	}
-	//fmt.Println("NewEntity add entity %d", kind)
-	return ent
 
+	if ent.kind != 0 {
+		ent.isEnemy = true
+	}
+	if ent.kind == 1 {
+		ent.canShoot = true
+	}
+
+	if ent.kind == EM_BARNACLEFISH_TYPE {
+		ent.width = EM_BARNACLEFISH_W
+		ent.height = EM_BARNACLEFISH_H
+		ent.clipping = false
+	} else {
+		ent.width = EN_SPRITE_W
+		ent.height = EN_SPRITE_H
+	}
 }
 
 func NewEntityManager(game *Game) *EntityManager {
@@ -184,7 +214,7 @@ func (em *EntityManager) Draw(screen *ebiten.Image) {
 
 	for i, v := range em.entityList {
 		entPtr := em.entityList[i]
-		if nil != v && true == v.alive {
+		if nil != v && true == v.draw {
 			// screenX := (v.worldX) - worldOffsetX
 			// screenY := (v.worldY) - worldOffsetY
 			// entImage := em.selectImage(v.kind, v.state, v.frame)
@@ -388,7 +418,7 @@ func (entity *Entity) bossMotion(game *Game) {
 		entity.entityFollowPlayer(game)
 		entity.entityMeleePlayer(game)
 	}
-	if entity.kind == EM_BARNACLEFISH_TYPE {
+	if entity.frozen {
 		entity.velX = 0
 		entity.velY = 0
 		entity.canFly = true
@@ -398,7 +428,14 @@ func (entity *Entity) bossMotion(game *Game) {
 
 func (em *EntityManager) entityMotion() {
 
-	for _, entity := range em.entityList {
+	for i, entity := range em.entityList {
+
+		// remove entitty that falls out of bounds y direction
+
+		if entX2 := entity.height + entity.worldX; entX2+EM_CULL_ENTITY_OOB_BUFFER_Y > (GAME_TILE_SIZE * GAME_MAP_ROWS) {
+			em.entityList[i] = nil
+			continue
+		}
 
 		//modifiable function pointer to perform movement
 		entity.motionMethod(em.game)
@@ -410,10 +447,11 @@ func (em *EntityManager) entityMotion() {
 		em.testRect.height = EN_SPRITE_H
 
 		// check collision
+
 		sideCollisions := em.game.tileMap.getSideCollisionData(*em.testRect)
 		if !sideCollisions.down && entity.gravityOn {
 			entity.velY += PL_GRAVITY_AMOUNT
-		} else if entity.velY > 0 {
+		} else if entity.velY > 0 && entity.clipping {
 			entity.velY = 0
 
 		}
