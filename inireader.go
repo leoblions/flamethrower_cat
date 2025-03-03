@@ -57,7 +57,7 @@ func readIni(filePath string) (map[string]string, error) {
 			v[LV-1] != READINI_SEPERATOR {
 			sepPosition := strings.Index(v, string(READINI_SEPERATOR))
 			var substr1, substr2 string
-			substr1 = string(v[0 : sepPosition-1])  //pos 0 to eq-1
+			substr1 = string(v[0:sepPosition])      //pos 0 to eq-1
 			substr2 = string(v[sepPosition+1 : LV]) // pos eq+1 to length-1
 			outmap[substr1] = substr2
 
