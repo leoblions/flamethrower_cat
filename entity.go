@@ -184,6 +184,7 @@ func (ent *Entity) specialSetup() {
 		ent.width = EM_BARNACLEFISH_W
 		ent.height = EM_BARNACLEFISH_H
 		ent.clipping = false
+		ent.canShoot = true
 	} else {
 		ent.width = EN_SPRITE_W
 		ent.height = EN_SPRITE_H
@@ -215,10 +216,6 @@ func (em *EntityManager) Draw(screen *ebiten.Image) {
 	for i, v := range em.entityList {
 		entPtr := em.entityList[i]
 		if nil != v && true == v.draw {
-			// screenX := (v.worldX) - worldOffsetX
-			// screenY := (v.worldY) - worldOffsetY
-			// entImage := em.selectImage(v.kind, v.state, v.frame)
-			// DrawImageAt(screen, entImage, screenX, screenY)
 			if v.kind == BOSS_ENT_KIND {
 				em.drawBoss(screen, entPtr)
 			} else {
@@ -356,10 +353,11 @@ func (entity *Entity) entityMeleePlayer(game *Game) {
 
 	if playerInAttackRange {
 		entity.state = 1
-		//fmt.Println("enemy melee	")
+		// attack
 
 	} else {
 		entity.state = 0
+		// walk
 	}
 
 }
@@ -427,12 +425,15 @@ func (entity *Entity) bossMotion(game *Game) {
 }
 
 func (em *EntityManager) entityMotion() {
-
+	gameboardheightPX := (GAME_TILE_SIZE * GAME_MAP_ROWS)
 	for i, entity := range em.entityList {
+		if nil == entity {
+			continue
+		}
 
 		// remove entitty that falls out of bounds y direction
 
-		if entX2 := entity.height + entity.worldX; entX2+EM_CULL_ENTITY_OOB_BUFFER_Y > (GAME_TILE_SIZE * GAME_MAP_ROWS) {
+		if entity.worldY-EM_CULL_ENTITY_OOB_BUFFER_Y-entity.height > gameboardheightPX {
 			em.entityList[i] = nil
 			continue
 		}
@@ -449,10 +450,19 @@ func (em *EntityManager) entityMotion() {
 		// check collision
 
 		sideCollisions := em.game.tileMap.getSideCollisionData(*em.testRect)
+		otherEntityCollisions := em.getSideEntityCollisionData(*em.testRect, i)
 		if !sideCollisions.down && entity.gravityOn {
 			entity.velY += PL_GRAVITY_AMOUNT
 		} else if entity.velY > 0 && entity.clipping {
 			entity.velY = 0
+
+		}
+		//collide sideways with other ents
+		if otherEntityCollisions.left && entity.velX < 0 {
+			entity.velX = 0
+		}
+		if otherEntityCollisions.right && entity.velX > 0 {
+			entity.velX = 0
 
 		}
 
@@ -463,6 +473,49 @@ func (em *EntityManager) entityMotion() {
 		entity.prevDirection = entity.direction
 
 	}
+
+}
+
+func (em *EntityManager) getSideEntityCollisionData(collider rect, currentEntityIndex int) *SideCollisionData {
+	//pointColl := tm.getRectPointCollisionData(collider)
+	// true if direction collides
+	x1 := collider.x
+	y1 := collider.y
+	x2 := collider.x + (collider.width)
+	y2 := collider.y + (collider.height)
+	xh := collider.x + (collider.width / 2)
+	yh := collider.y + (collider.height / 2)
+
+	currentTopP := &Point{xh, y1}
+	currentBottomP := &Point{x2, y2}
+	currentLeftP := &Point{x1, yh}
+	currentRightP := &Point{x2, yh}
+
+	cdir := &SideCollisionData{}
+
+	for i, v := range em.entityList {
+		if i != currentEntityIndex && nil != em.entityList[i] {
+			em.testRect.x = v.worldX
+			em.testRect.y = v.worldY
+			em.testRect.width = v.width
+			em.testRect.height = v.height
+			if false == cdir.up && currentTopP.intersectsWithRect(em.testRect) {
+				cdir.up = true
+			}
+			if false == cdir.down && currentBottomP.intersectsWithRect(em.testRect) {
+				cdir.down = true
+			}
+			if false == cdir.left && currentLeftP.intersectsWithRect(em.testRect) {
+				cdir.left = true
+			}
+			if false == cdir.right && currentRightP.intersectsWithRect(em.testRect) {
+				cdir.right = true
+			}
+		}
+
+	}
+
+	return cdir
 
 }
 

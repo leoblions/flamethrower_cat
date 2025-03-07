@@ -288,7 +288,9 @@ func (con *Console) consoleHandleKeys(keys []ebiten.Key) {
 }
 
 func (con *Console) updateCommandRow() {
-	con.rasterStringArray[CON_LINES-1].stringContent = con.currentCommand
+	if con.rasterStringArray[CON_LINES-1].stringContent != con.currentCommand {
+		con.rasterStringArray[CON_LINES-1].updateText(con.currentCommand)
+	}
 }
 
 func (con *Console) initRasterStringLinesBlank() {

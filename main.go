@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"image/color"
 	_ "image/png"
 	"log"
 	"os"
@@ -125,6 +126,7 @@ type Game struct {
 
 type gameComponents struct {
 	scoreString       *RasterString
+	actString         *RasterString
 	livesString       *RasterString
 	stageString       *RasterString
 	centerText        *RasterString
@@ -348,6 +350,8 @@ func (g *Game) initRasterStrings() {
 	levelStr := fmt.Sprintf("Level: %d", g.level)
 	g.gameComponents.stageString = NewRasterString(g, levelStr, g.screenWidth-90, 10)
 	g.gameComponents.livesString = NewRasterString(g, "Lives: 3", (g.screenWidth/2)-50, 10)
+	g.gameComponents.actString = NewRasterString(g, "Press E", (g.screenWidth)-70, (g.screenHeight)-50)
+	g.gameComponents.actString.setBackgroundColor(&color.RGBA{0xff, 0x00, 0x00, 0xff})
 
 }
 
@@ -366,6 +370,7 @@ func (g *Game) incrementScore(points int) {
 
 func (g *Game) drawRasterStrings(screen *ebiten.Image) {
 	g.gameComponents.scoreString.Draw(screen)
+	g.gameComponents.actString.Draw(screen)
 	g.gameComponents.centerText.Draw(screen)
 	g.gameComponents.stageString.Draw(screen)
 	g.gameComponents.livesString.Draw(screen)

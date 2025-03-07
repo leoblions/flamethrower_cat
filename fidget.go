@@ -136,6 +136,7 @@ func (pum *FidgetManager) Draw(screen *ebiten.Image) {
 }
 
 func (pum *FidgetManager) Update() {
+	pum.game.actString.visible = false
 	pum.checkFidgetsTouchedPlayer()
 	pum.checkProjectileTouchedFidget()
 	pum.game.activateObject = false
@@ -157,6 +158,7 @@ func (pum *FidgetManager) touchFidgetAction(touchKind, index int) {
 	touchedFidget := pum.fidgetsArray[index]
 	switch touchedFidget.kind {
 	case 0, 3:
+		pum.game.actString.visible = true
 		if pum.game.activateObject {
 			uid := touchedFidget.uid
 			pum.game.warpManager.warpPlayerToWarpID(uid)

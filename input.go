@@ -16,6 +16,7 @@ type Input struct {
 
 const (
 	INP_PRINT_WHEN_KEY_NOT_USED = false
+	INP_ACTIVATE_ON_UP          = false
 )
 
 type DirectionFlags struct {
@@ -109,7 +110,10 @@ func (inp *Input) Update() {
 			switch k {
 			case ebiten.KeyArrowUp, ebiten.KeySpace, ebiten.KeyW:
 				inp.dflags.up = true
-				inp.game.activateObject = true
+				if INP_ACTIVATE_ON_UP {
+					inp.game.activateObject = true
+				}
+
 				//inp.game.ball.Serve()
 			case ebiten.KeyArrowDown, ebiten.KeyS:
 				inp.dflags.down = true

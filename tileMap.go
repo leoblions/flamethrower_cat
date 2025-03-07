@@ -229,6 +229,7 @@ func (tm *TileMap) pointCollidedWithGivenTileKind(worldX, worldY, kind int) bool
 	}
 
 }
+
 func (tm *TileMap) solidUnderPlayer(distbelowFeet int) bool {
 	//true if solid tile
 	prect := tm.game.player.getWorldColliderRect()
@@ -242,6 +243,7 @@ func (tm *TileMap) saveMapToFile() {
 	name := tm.getDataFileURL()
 	writeMapToFile(tm.tileData, name)
 }
+
 func (tm *TileMap) loadCurrentLevelMapFromFile() error {
 	//writeMapToFile(tm.tileData, TM_DEFAULT_MAP_FILENAME)
 	name := tm.getDataFileURL()
