@@ -448,3 +448,26 @@ func (p Point) intersectsWithRect(rect1 *rect) bool {
 		p.x <= x2 &&
 		p.y <= y2)
 }
+
+func fileExistsA(filePath string) bool {
+	_, err := os.Stat(filePath)
+	if nil != err {
+		return false
+	} else {
+		return true
+	}
+}
+
+func counterClosureTF(counterTicksMax int) func() bool {
+	// returns closure that returns true every N times it is called
+	currentTickCount := 0
+	return func() bool {
+		if currentTickCount < counterTicksMax {
+			currentTickCount++
+			return false
+		} else {
+			currentTickCount = 0
+			return true
+		}
+	}
+}

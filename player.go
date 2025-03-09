@@ -36,6 +36,10 @@ const (
 	PL_MAX_VEL_W          float32 = 2.0
 	PL_MAX_VEL_LADDER     float32 = 5.0
 	PL_DAMAGE_DEBOUNCE            = 100
+	PL_DEAD_COUNT_MAX             = 100
+	PL_DEAD_TEXT                  = "dead cat"
+	PL_GAME_OVER_TEXT             = "game over"
+	PL_GAME_WIN                   = "you win"
 
 	PLAYER_PLATFORM_FOOT_POS_X = 50
 	PLAYER_PLATFORM_FOOT_POS_Y = 120
@@ -72,6 +76,7 @@ type Player struct {
 	touchingLadder                               bool
 	standingOnPlatform                           bool
 	damageDebounce                               int
+	deadCount                                    int
 
 	collRect     *rect
 	collRectTile *rect
@@ -103,6 +108,7 @@ func NewPlayer(g *Game, startX, startY int) *Player {
 	p.xMax = panelWidth - PL_COLLRECT_W
 	p.health = 100
 	p.state = 's'
+	p.deadCount = 0
 	p.currentFrame = 0
 	p.width = PL_COLLRECT_W
 	p.height = PL_COLLRECT_H
@@ -388,13 +394,55 @@ func (p *Player) Update() {
 	p.selectImage()
 
 	if p.checkPlayerStandingOnLava() {
-		p.changeHealth(-PL_LAVA_DAMAGE_AMOUNT)
+		p.changeHealthRelative(-PL_LAVA_DAMAGE_AMOUNT)
 		p.game.audioPlayer.playSoundByID("lavahiss")
 	}
 
 	p.footUnderwater = p.checkPlayerUnderwater()
 	if p.headUnderwater {
 		p.bubbleEmitter()
+	}
+	p.deadActions()
+}
+
+func (p *Player) deadActions() {
+
+	if p.state == 'd' {
+		if p.deadCount < PL_DEAD_COUNT_MAX {
+			p.deadCount++
+			if !p.game.hud.game.hud.t1Text.visible {
+				p.deadScreenText(true)
+			}
+		} else {
+			p.state = 's'
+			//p.health = PL_HEALTH_MAX
+			p.changeHealthAbsolute(PL_HEALTH_MAX)
+			p.deadCount = 0
+			p.deadScreenText(false)
+
+			p.game.warpManager.warpPlayerToWarpID(p.game.warpManager.lastUsedWarpZone)
+			if p.game.lives > 0 {
+				p.game.updateLivesRelative(-1)
+				//fmt.Println("Lives = ", p.game.lives)
+			}
+		}
+	}
+}
+
+func (p *Player) deadScreenText(show bool) {
+	var screenText string
+	if p.game.lives <= 0 {
+		screenText = PL_GAME_OVER_TEXT
+	} else {
+		screenText = PL_DEAD_TEXT
+	}
+	if show {
+		p.game.hud.t1Text.updateText(screenText)
+		p.game.hud.t1Text.visible = true
+		p.game.hud.t1Text.blink = true
+	} else {
+		p.game.hud.t1Text.visible = false
+		p.game.hud.t1Text.blink = false
 	}
 }
 
@@ -408,10 +456,19 @@ func (p *Player) warpPlayerToGridLocation(gridX, gridY int) {
 
 }
 
-func (p *Player) changeHealth(hitpoints int) {
+func (p *Player) changeHealthRelative(hitpoints int) {
 
 	healthTemp := p.health
 	healthTemp += hitpoints
+	healthTemp = clamp(0, PL_HEALTH_MAX, healthTemp)
+	p.health = healthTemp
+	p.game.healthBar.FillPercent(p.health)
+
+}
+func (p *Player) changeHealthAbsolute(hitpoints int) {
+
+	healthTemp := p.health
+	healthTemp = hitpoints
 	healthTemp = clamp(0, PL_HEALTH_MAX, healthTemp)
 	p.health = healthTemp
 	p.game.healthBar.FillPercent(p.health)

@@ -16,8 +16,9 @@ type WarpDest struct {
 }
 
 type WarpManager struct {
-	game         *Game
-	warpDestList []*WarpDest
+	game             *Game
+	warpDestList     []*WarpDest
+	lastUsedWarpZone int
 }
 
 const (
@@ -28,11 +29,6 @@ const (
 func NewWarpManager(game *Game) *WarpManager {
 	wm := &WarpManager{}
 	wm.warpDestList = []*WarpDest{}
-	//wm.warpDestList = append(wm.warpDestList, &WarpDest{0, 1, 3, 3})
-	//wm.warpDestList = append(wm.warpDestList, &WarpDest{1, 2, 3, 3})
-	//wm.warpDestList = append(wm.warpDestList, &WarpDest{2, 3, 3, 3})
-	//wm.warpDestList = append(wm.warpDestList, &WarpDest{3, 4, 3, 3})
-	//wm.warpDestList = append(wm.warpDestList, &WarpDest{4, 5, 3, 3})
 	wm.loadDataFromFile()
 	wm.game = game
 	return wm
@@ -42,11 +38,10 @@ func (wm *WarpManager) warpPlayerToWarpID(warpID int) {
 	for _, v := range wm.warpDestList {
 		if v.warpID == warpID {
 			wm.game.level = v.mapID
-			//wm.game.tileMap.loadCurrentLevelMapFromFile()
-			//wm.game.pickupManager.loadDataFromFile()
-			//wm.game.fidgetManager.loadDataFromFile()
 			wm.game.loadLevel(wm.game.level)
 			wm.game.player.warpPlayerToGridLocation(v.gridX, v.gridY)
+			wm.lastUsedWarpZone = warpID
+			wm.game.hud.levelString.updateText(fmt.Sprintf("Level: %d", v.mapID))
 			return
 		}
 
@@ -58,7 +53,6 @@ func (wm *WarpManager) warpPlayerToWarpID(warpID int) {
 func (wm *WarpManager) loadDataFromFile() error {
 	fmt.Println("warp data load")
 	wm.warpDestList = []*WarpDest{}
-	//writeMapToFile(wm.tileData, wm_DEFAULT_MAP_FILENAME)
 	warpDataFilePath := path.Join(GAME_LEVEL_DATA_DIR, WM_WARP_DATA_MASTER)
 	numericData, err := loadDataListFromFile(warpDataFilePath)
 	rows := len(numericData)
@@ -81,7 +75,6 @@ func (wm *WarpManager) loadDataFromFile() error {
 	for i := 0; i < rows; i++ {
 		data := numericData[i]
 		pfTemp := &WarpDest{}
-		//gridX, gridY, moveGridX, moveGridY, kind
 		pfTemp = &WarpDest{data[0], data[1], data[2], data[3]}
 		wm.warpDestList = append(wm.warpDestList, pfTemp)
 

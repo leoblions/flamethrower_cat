@@ -76,8 +76,6 @@ func NewFidgetManager(game *Game) *FidgetManager {
 	fm.maxFidgets = FM_MAX_FIDGETS
 	fm.initImages()
 	fm.fidgetsArray = [FM_MAX_FIDGETS]*Fidget{}
-	//pum.AddPickup(200, 200, 0)
-	//pum.AddPickup(200, 300, 0)
 	fm.testRect = &rect{0, 0, FM_SPRITE_W, FM_SPRITE_H}
 	fm.assetID = 0
 
@@ -136,7 +134,7 @@ func (pum *FidgetManager) Draw(screen *ebiten.Image) {
 }
 
 func (pum *FidgetManager) Update() {
-	pum.game.actString.visible = false
+	pum.game.hud.actString.visible = false
 	pum.checkFidgetsTouchedPlayer()
 	pum.checkProjectileTouchedFidget()
 	pum.game.activateObject = false
@@ -158,7 +156,7 @@ func (pum *FidgetManager) touchFidgetAction(touchKind, index int) {
 	touchedFidget := pum.fidgetsArray[index]
 	switch touchedFidget.kind {
 	case 0, 3:
-		pum.game.actString.visible = true
+		pum.game.hud.actString.visible = true
 		if pum.game.activateObject {
 			uid := touchedFidget.uid
 			pum.game.warpManager.warpPlayerToWarpID(uid)
@@ -166,7 +164,6 @@ func (pum *FidgetManager) touchFidgetAction(touchKind, index int) {
 			pum.game.audioPlayer.playSoundByID("dooropen")
 		}
 	case 1:
-		//fmt.Println("player touched the barrel")
 		if touchKind == 1 {
 			touchedFidget.alive = false
 			pum.game.projectileManager.addFireball(
@@ -177,12 +174,11 @@ func (pum *FidgetManager) touchFidgetAction(touchKind, index int) {
 		}
 
 	case 2:
-		pum.game.player.changeHealth(-1)
+		pum.game.player.changeHealthRelative(-1)
 	case 5:
 		pum.game.player.touchingLadder = true
-		//fmt.Println("player touched the barrel")
 	case 6:
-		pum.game.player.changeHealth(-1)
+		pum.game.player.changeHealthRelative(-1)
 
 	}
 
@@ -190,7 +186,6 @@ func (pum *FidgetManager) touchFidgetAction(touchKind, index int) {
 
 func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 
-	//playerRect := pum.game.player.getWorldColliderRect()
 	playerRect := pum.game.player.collRect
 	for i, v := range pum.fidgetsArray {
 		if nil != v && true == v.alive {
@@ -205,7 +200,7 @@ func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 			}
 
 			if collideRect(*playerRect, *pum.testRect) {
-				//v.alive = false
+
 				pum.touchFidgetAction(0, i)
 			}
 		}
@@ -214,7 +209,6 @@ func (pum *FidgetManager) checkFidgetsTouchedPlayer() {
 
 func (pum *FidgetManager) checkProjectileTouchedFidget() {
 
-	//playerRect := pum.game.player.getWorldColliderRect()
 	fidRect := pum.testRect
 	projPoint := &Point{}
 	for iFid, vFid := range pum.fidgetsArray {
@@ -233,7 +227,6 @@ func (pum *FidgetManager) checkProjectileTouchedFidget() {
 				}
 
 				if projPoint.intersectsWithRect(fidRect) {
-					//v.alive = false
 					pum.touchFidgetAction(1, iFid)
 				}
 			}
@@ -321,7 +314,6 @@ func (pum *FidgetManager) getDataFileURL() string {
 
 func (pum *FidgetManager) loadDataFromFile() error {
 	pum.fidgetsArray = [FM_MAX_FIDGETS]*Fidget{}
-	//writeMapToFile(tm.tileData, TM_DEFAULT_MAP_FILENAME)
 	name := pum.getDataFileURL()
 	numericData, err := loadDataListFromFile(name)
 	rows := len(numericData)

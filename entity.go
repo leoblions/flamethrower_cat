@@ -22,6 +22,7 @@ kinds:
 8 = bird
 9 = earwig
 10 = boss body part
+11 = fish barnacle boss
 
 states:
 0 = walk
@@ -58,6 +59,8 @@ const (
 	EM_MOTH_TYPE                = 10
 	EM_BOSS_HEALTH              = 300
 	EM_CULL_ENTITY_OOB_BUFFER_Y = 100
+	EN_DAMAGE_1                 = 5
+	EN_DAMAGE_2                 = 10
 )
 
 const (
@@ -523,8 +526,17 @@ func (em *EntityManager) touchEntityAction(kind, index int) {
 	//fmt.Println("Entity touched ", kind)
 	//ent.game.incrementScore(1)
 	entity := em.entityList[index]
+	damage := 0
+	switch kind {
+	case 1, 2, 3, 4, 5:
+		damage = EN_DAMAGE_1
+	case 6, 7, 8, 9, 10, 11:
+		damage = EN_DAMAGE_2
+	default:
+		damage = 0
+	}
 	if entity.isEnemy {
-		em.game.player.takeDamageWithDebounce(5)
+		em.game.player.takeDamageWithDebounce(damage)
 	}
 }
 

@@ -104,14 +104,16 @@ func (pum *PickupManager) pickupItemAction(kind int) {
 	switch kind {
 	case 0:
 		fmt.Println("Got star ", kind)
-		pum.game.player.changeHealth(10)
+		pum.game.player.changeHealthRelative(10)
 	case 1:
 		fmt.Println("Got skull ", kind)
+		pum.game.player.changeHealthRelative(5)
 	case 2:
 		fmt.Println("Got chicken ", kind)
-		pum.game.player.changeHealth(50)
+		pum.game.player.changeHealthRelative(50)
 	case 3:
 		fmt.Println("Got key ", kind)
+		pum.game.player.changeHealthRelative(5)
 	}
 }
 

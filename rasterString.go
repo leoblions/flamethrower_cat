@@ -16,23 +16,36 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-var rasterStringStatic = struct {
-	ssCharsWide int
-	ssCharsTall int
+// var rasterStringStatic = struct {
+// 	ssCharsWide int
+// 	ssCharsTall int
 
-	ssimageSubdir              string
-	lettersSpritesheetFilename string
-	lettersCharmapFile         string
-	runeImageMap               map[rune]*ebiten.Image
-}{
-	ssCharsWide: 10,
-	ssCharsTall: 10,
+// 	ssimageSubdir              string
+// 	lettersSpritesheetFilename string
+// 	lettersCharmapFile         string
+// 	runeImageMap               map[rune]*ebiten.Image
+// }{
+// 	ssCharsWide: 10,
+// 	ssCharsTall: 10,
 
-	ssimageSubdir:              "images",
-	lettersSpritesheetFilename: "letterSpritesW.png",
-	lettersCharmapFile:         "charmap_letters.txt",
-	runeImageMap:               nil,
-}
+// 	ssimageSubdir:              "images",
+// 	lettersSpritesheetFilename: "letterSpritesW.png",
+// 	lettersCharmapFile:         "charmap_letters.txt",
+// 	runeImageMap:               nil,
+// }
+
+var (
+	rast_ss_CharsWide int = 10
+	ssCharsTall       int = 10
+	// resource files
+	rast_ss_ssimageSubdir              string = "images"
+	rast_ss_lettersSpritesheetFilename string = "letterSpritesW.png"
+	//rast_ss_data_subdir                string                 = "leveldata"
+	rast_ss_lettersCharmapFile      string                 = "charmap_letters.txt"
+	rast_ss_lettersCharmapFileTitle string                 = "charmap_letters_title.txt"
+	rast_ss_runeImageMap            map[rune]*ebiten.Image = nil
+	rast_ss_runeImageMapTitle       map[rune]*ebiten.Image = nil
+)
 
 const (
 	ssimageSubdir              = "images"
@@ -40,31 +53,41 @@ const (
 	characterOrdinalOffset     = 48
 )
 const (
-	RAST_SS_CHAR_PIX_H     = 15
-	RAST_SS_CHAR_PIX_W     = 10
-	RAST_SS_CHAR_KERNING   = 10
-	RAST_SS_BG_FILL        = true
-	RAST_SS_BG_ALPHA       = 0x8f
-	RAST_SS_IMAGE_FILENAME = "letterSpritesT.png"
-	IMAGES_SUBDIR          = "images"
-	LETTERS_LOCATION_FILE  = "letters.json"
+	RAST_SS_CHAR_PIX_H           = 15
+	RAST_SS_CHAR_PIX_W           = 10
+	RAST_SS_CHAR_PIX_TITLE_H     = 25
+	RAST_SS_CHAR_PIX_TITLE_W     = 25
+	RAST_SS_CHAR_KERNING         = 10
+	RAST_SS_CHAR_KERNING_TITLE   = 25
+	RAST_SS_BLINK_RATE           = 30
+	RAST_SS_BG_FILL              = true
+	RAST_SS_BG_ALPHA             = 0x8f
+	RAST_SS_IMAGE_FILENAME       = "letterSpritesT.png"
+	RAST_SS_IMAGE_TITLE_FILENAME = "titleLetter.png"
+	IMAGES_SUBDIR                = "images"
+	LETTERS_LOCATION_FILE        = "letters.json"
+	RAST_SS_DATA_SUBDIR          = "leveldata"
 )
 
 type RasterString struct {
-	game            *Game
-	stringContent   string
-	screenX         int
-	screenY         int
-	spritesheet     *ebiten.Image
-	letterSprites   []*ebiten.Image
-	visible         bool
-	currImage       *ebiten.Image
-	stringImage     *ebiten.Image
-	runeImageMap    map[rune]*ebiten.Image
-	letterHeight    int
-	letterWidth     int
-	letterKerning   int
-	backgroundColor *color.RGBA
+	game              *Game
+	stringContent     string
+	screenX           int
+	screenY           int
+	spritesheet       *ebiten.Image
+	letterSprites     []*ebiten.Image
+	visible           bool
+	blink             bool
+	currImage         *ebiten.Image
+	stringImage       *ebiten.Image
+	runeImageMap      map[rune]*ebiten.Image
+	runeImageMapTitle map[rune]*ebiten.Image
+	letterHeight      int
+	letterWidth       int
+	letterKerning     int
+	blinkCounter      func() bool
+	backgroundColor   *color.RGBA
+	//updateImageMethod func() *ebiten.Image
 }
 
 type characterRecord struct {
@@ -95,25 +118,61 @@ func NewRasterString(g *Game, content string, startX, startY int) *RasterString 
 	p.letterHeight = RAST_SS_CHAR_PIX_H
 	p.letterWidth = RAST_SS_CHAR_PIX_W
 	p.letterKerning = RAST_SS_CHAR_KERNING
+	p.blinkCounter = counterClosureTF(RAST_SS_BLINK_RATE)
+	//p.updateImageMethod = p.getRasterStringAsSingleImage
 	//srite sheet
 	var err error
-	imageDir := path.Join(ssimageSubdir, lettersSpritesheetFilename)
-	p.spritesheet, _, err = ebitenutil.NewImageFromFile(imageDir)
-	p.currImage = getSubImage(p.spritesheet, 0, 0, p.letterWidth, p.letterHeight)
+	spriteSheetFullPath := path.Join(rast_ss_ssimageSubdir, lettersSpritesheetFilename)
+	charmapFilePath := path.Join(RAST_SS_DATA_SUBDIR, rast_ss_lettersCharmapFile)
 	p.visible = true
 
 	if err != nil {
 		log.Fatal(nil)
 	}
 
-	if rasterStringStatic.runeImageMap == nil {
-		p.runeImageMap = p.initializeLetterSprites()
-		rasterStringStatic.runeImageMap = p.runeImageMap
+	if rast_ss_runeImageMap == nil {
+		p.runeImageMap = p.initializeLetterSprites(spriteSheetFullPath, charmapFilePath)
+		rast_ss_runeImageMap = p.runeImageMap
 	} else {
-		p.runeImageMap = rasterStringStatic.runeImageMap
+		p.runeImageMap = rast_ss_runeImageMap
 	}
 	p.backgroundColor = &bg_color
-	p.runeImageMap = p.initializeLetterSprites()
+	//p.runeImageMap = p.initializeLetterSprites(spriteSheetFullPath)
+	p.stringImage = p.getRasterStringAsSingleImage()
+
+	return p
+
+}
+
+func NewRasterTitleString(g *Game, content string, startX, startY int) *RasterString {
+	p := &RasterString{}
+	p.game = g
+	p.stringContent = content
+	p.screenX = startX
+	p.screenY = startY
+	p.letterHeight = RAST_SS_CHAR_PIX_TITLE_H
+	p.letterWidth = RAST_SS_CHAR_PIX_TITLE_W
+	p.letterKerning = RAST_SS_CHAR_KERNING_TITLE
+	p.blinkCounter = counterClosureTF(RAST_SS_BLINK_RATE)
+	//p.blink = true
+	//srite sheet
+	var err error
+	spriteSheetFullPath := path.Join(rast_ss_ssimageSubdir, RAST_SS_IMAGE_TITLE_FILENAME)
+	charmapFilePath := path.Join(RAST_SS_DATA_SUBDIR, rast_ss_lettersCharmapFileTitle)
+	p.visible = true
+
+	if err != nil {
+		log.Fatal(nil)
+	}
+
+	if rast_ss_runeImageMapTitle == nil {
+		p.runeImageMap = p.initializeLetterSprites(spriteSheetFullPath, charmapFilePath)
+		rast_ss_runeImageMapTitle = p.runeImageMap
+	} else {
+		p.runeImageMap = rast_ss_runeImageMapTitle
+	}
+	p.backgroundColor = &bg_color
+	//p.runeImageMap = p.initializeLetterSprites(spriteSheetFullPath)
 	p.stringImage = p.getRasterStringAsSingleImage()
 
 	return p
@@ -163,7 +222,7 @@ func (p *RasterString) getRasterStringAsSingleImage() *ebiten.Image {
 		stringImage.Fill(*p.backgroundColor)
 	}
 	for _, letter := range p.stringContent {
-		letterImage := p.runeImageMap[letter]
+		letterImage := p.runeImageMap[letter] // get image from map using rune as key
 
 		if letterImage != nil {
 
@@ -179,11 +238,14 @@ func (p *RasterString) getRasterStringAsSingleImage() *ebiten.Image {
 }
 
 func (p *RasterString) Update() {
+	if p.blink && p.blinkCounter() {
+		p.visible = !p.visible
+	}
 
 }
 
-func (p *RasterString) readSpriteLocationTableFile() []*characterRecord {
-	linesList := getListOfLinesFromFile(rasterStringStatic.lettersCharmapFile)
+func (p *RasterString) readSpriteLocationTableFile(charmapFilePath string) []*characterRecord {
+	linesList := getListOfLinesFromFile(charmapFilePath)
 	//p.exportStringSliceToJSON(linesList)
 	recordsList := []*characterRecord{}
 	for _, line := range linesList {
@@ -277,13 +339,20 @@ func (p *RasterString) encodeCRlistP(crList []*characterRecord) error {
 
 }
 
-func (p *RasterString) initializeLetterSprites() map[rune]*ebiten.Image {
-	recordsList := p.readSpriteLocationTableFile()
-	//p.encodeCRlist(recordsList)
-	//p.encodeCRlistP(recordsList)
+func (p *RasterString) initializeLetterSprites(spriteSheetFullPath, charmapFilePath string) map[rune]*ebiten.Image {
+	recordsList := p.readSpriteLocationTableFile(charmapFilePath)
+	var err error
 
-	imageDir := path.Join(IMAGES_SUBDIR, RAST_SS_IMAGE_FILENAME)
-	rawImage, _, err := ebitenutil.NewImageFromFile(imageDir)
+	if !fileExists(spriteSheetFullPath) {
+		log.Fatal("initializeLetterSprites can't find the file ", spriteSheetFullPath)
+	}
+	if !fileExists(charmapFilePath) {
+		log.Fatal("initializeLetterSprites can't find the file ", charmapFilePath)
+	}
+
+	//imageDir := path.Join(IMAGES_SUBDIR, RAST_SS_IMAGE_FILENAME)
+	p.spritesheet, _, err = ebitenutil.NewImageFromFile(spriteSheetFullPath)
+	rawImage, _, err := ebitenutil.NewImageFromFile(spriteSheetFullPath)
 	if err != nil {
 		log.Fatal(err)
 	}

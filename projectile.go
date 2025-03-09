@@ -163,6 +163,11 @@ func (pm *ProjectileManager) initImages() error {
 	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
 	imgTemp = copyAndStretchImage(rawImage, PM_BULLET_SIZE, PM_BULLET_SIZE)
 	pm.projectileImage = append(pm.projectileImage, imgTemp)
+	// fb proj 3
+	imageDir = path.Join(subdir, PM_IMAGE_FIREBALL3)
+	rawImage, _, err = ebitenutil.NewImageFromFile(imageDir)
+	imgTemp = copyAndStretchImage(rawImage, PM_BULLET_SIZE, PM_BULLET_SIZE)
+	pm.projectileImage = append(pm.projectileImage, imgTemp)
 
 	// fireball images
 	imageDir = path.Join(subdir, PM_IMAGE_FIREBALL)
@@ -289,7 +294,7 @@ func (pm *ProjectileManager) Update() {
 			} else if v.kind == 1 {
 				if v.projectileCollidePlayer(pm.game) {
 					//fmt.Println("enemy proj hit player")
-					pm.game.player.changeHealth(-PM_DAMEAGE_PLAYER)
+					pm.game.player.changeHealthRelative(-PM_DAMEAGE_PLAYER)
 					continue
 				}
 			}
